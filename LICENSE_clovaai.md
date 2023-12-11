@@ -6,7 +6,7 @@ This repository contains the framework for training speaker recognition models d
 ```
 pip install -r requirements.txt
 ```
-
+We additionally use [fvcore](https://github.com/facebookresearch/fvcore) to calculate FLOPs.
 ### Data preparation
 
 The following script can be used to download and prepare the VoxCeleb dataset for training.
