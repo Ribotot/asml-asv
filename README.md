@@ -10,9 +10,9 @@ Code for other datasets other than VoxCeleb will be added.
 
 model and loss are organized into three folders: asml/clova/custom.
 
-The "asml" is our own work and the "clova" is the same as the those in the VoxCeleb trainer.
+* The "asml" is our own work and the "clova" is the same as the those in the VoxCeleb trainer.
 
-"custom" contains what we are developing based on other researchers' work. 
+* "custom" contains what we are developing based on other researchers' work. 
 
 
 ### License
