@@ -17,6 +17,6 @@ model and loss are organized into three folders: asml/clova/custom.
 
 ### License
 ```
-Copyright (c) 2023-present ASML Lab. of Hanyang University
-All rights reserved
+Copyright (c) 2023-present ASML Lab. of Hanyang University,
+All rights reserved.
 ```
