@@ -6,7 +6,7 @@ import torchaudio
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
-from clova.models.ResNetBlocks import *
+from models.clova.ResNetBlocks import *
 from utils import PreEmphasis
 
 class ResNetSE(nn.Module):
