@@ -168,6 +168,13 @@ class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my expe
         x = self.wave2emb(x, max_frame)
         return x
 
+
+def MainModel(nOut=256, **kwargs):
+    # Number of filters
+    model = ECAPA_TDNN(nOut, **kwargs)
+    return model
+
+
 if __name__=="__main__":
     # batch_size, num_frames, feat_dim = 1, 3000, 80
     batch_size, second = 1, 4
