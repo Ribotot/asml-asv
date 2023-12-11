@@ -6,4 +6,4 @@ save_path: exps/ResNetSE34L_AM
 nLcasses: 5994
 batch_size: 200
 scale: 30
-margin: 0.3
+margin: 0.2

@@ -1,0 +1,10 @@
+model: custom.ECAPATDNN512
+nOut: 256
+max_frames: 200
+batch_size: 200
+trainfunc: clova.aamsoftmax
+lr_decay: 0.75
+weight_decay: 5e-05
+max_seg_per_spk: 500
+augment: True
+save_path: exps/ECAPATDNN512_AAM
