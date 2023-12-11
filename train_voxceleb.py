@@ -47,7 +47,7 @@ parser.add_argument('--weight_decay',   type=float, default=0,      help='Weight
 ## Loss functions
 parser.add_argument("--hard_prob",      type=float, default=0.5,    help='Hard negative mining probability, otherwise random, only for some loss functions')
 parser.add_argument("--hard_rank",      type=int,   default=10,     help='Hard negative mining rank in the batch, only for some loss functions')
-parser.add_argument('--margin',         type=float, default=0.1,    help='Loss margin, only for some loss functions')
+parser.add_argument('--margin',         type=float, default=0.2,    help='Loss margin, only for some loss functions')
 parser.add_argument('--scale',          type=float, default=30,     help='Loss scale, only for some loss functions')
 parser.add_argument('--nPerSpeaker',    type=int,   default=1,      help='Number of utterances per speaker per batch, only for metric learning based losses')
 parser.add_argument('--nClasses',       type=int,   default=5994,   help='Number of speakers in the softmax layer, only for softmax-based losses')
@@ -62,12 +62,20 @@ parser.add_argument('--initial_model',  type=str,   default="",     help='Initia
 parser.add_argument('--save_path',      type=str,   default="exps/exp1", help='Path for model and logs')
 
 ## Training and test data
-parser.add_argument('--train_list',     type=str,   default="data/train_list.txt",  help='Train list')
-parser.add_argument('--test_list',      type=str,   default="data/test_list.txt",   help='Evaluation list')
-parser.add_argument('--train_path',     type=str,   default="data/voxceleb2", help='Absolute path to the train set')
-parser.add_argument('--test_path',      type=str,   default="data/voxceleb1", help='Absolute path to the test set')
-parser.add_argument('--musan_path',     type=str,   default="data/musan_split", help='Absolute path to the test set')
-parser.add_argument('--rir_path',       type=str,   default="data/RIRS_NOISES/simulated_rirs", help='Absolute path to the test set')
+parser.add_argument('--train_list',        type=str,   default="/home/jh2/Workspace/cjh/fire/sess_torch/meta_vc2_mfbe80/voxceleb2/all/wav_vc2_train.scp",           help='Path for Vox_2 dev list')
+parser.add_argument('--test_list',          type=str,   default="/home/jh2/Workspace/cjh/fire/sess_torch/meta_vc1/veri_test_clean.txt",     help='Evaluation list');
+parser.add_argument('--train_path',        type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/VoxCeleb2/dev/wav/",          help='Absolute path to the train set');
+parser.add_argument('--test_path',          type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/VoxCeleb1/test/wav/", help='Absolute path to the test set');
+parser.add_argument('--musan_path',        type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/musan_split", help='Absolute path to the test set');
+parser.add_argument('--rir_path',          type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/RIRS_NOISES/simulated_rirs", help='Absolute path to the test set');
+
+
+# parser.add_argument('--train_list',     type=str,   default="data/train_list.txt",  help='Train list')
+# parser.add_argument('--test_list',      type=str,   default="data/test_list.txt",   help='Evaluation list')
+# parser.add_argument('--train_path',     type=str,   default="data/voxceleb2", help='Absolute path to the train set')
+# parser.add_argument('--test_path',      type=str,   default="data/voxceleb1", help='Absolute path to the test set')
+# parser.add_argument('--musan_path',     type=str,   default="data/musan_split", help='Absolute path to the test set')
+# parser.add_argument('--rir_path',       type=str,   default="data/RIRS_NOISES/simulated_rirs", help='Absolute path to the test set')
 
 ## Model definition
 parser.add_argument('--n_mels',         type=int,   default=40,     help='Number of mel filterbanks')
@@ -77,8 +85,6 @@ parser.add_argument('--encoder_type',   type=str,   default="SAP",  help='Type o
 parser.add_argument('--nOut',           type=int,   default=512,    help='Embedding size in the last FC layer')
 parser.add_argument('--sinc_stride',    type=int,   default=10,    help='Stride size of the first analytic filterbank layer of RawNet3')
 
-## For test only
-parser.add_argument('--eval',           dest='eval', action='store_true', help='Eval only')
 
 ## Distributed and mixed precision training
 parser.add_argument('--port',           type=str,   default="8888", help='Port for distributed training, input as text')
