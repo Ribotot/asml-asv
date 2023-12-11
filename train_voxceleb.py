@@ -62,20 +62,12 @@ parser.add_argument('--initial_model',  type=str,   default="",     help='Initia
 parser.add_argument('--save_path',      type=str,   default="exps/exp1", help='Path for model and logs')
 
 ## Training and test data
-parser.add_argument('--train_list',        type=str,   default="/home/jh2/Workspace/cjh/fire/sess_torch/meta_vc2_mfbe80/voxceleb2/all/wav_vc2_train.scp",           help='Path for Vox_2 dev list')
-parser.add_argument('--test_list',          type=str,   default="/home/jh2/Workspace/cjh/fire/sess_torch/meta_vc1/veri_test_clean.txt",     help='Evaluation list');
-parser.add_argument('--train_path',        type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/VoxCeleb2/dev/wav/",          help='Absolute path to the train set');
-parser.add_argument('--test_path',          type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/VoxCeleb1/test/wav/", help='Absolute path to the test set');
-parser.add_argument('--musan_path',        type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/musan_split", help='Absolute path to the test set');
-parser.add_argument('--rir_path',          type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/RIRS_NOISES/simulated_rirs", help='Absolute path to the test set');
-
-
-# parser.add_argument('--train_list',     type=str,   default="data/train_list.txt",  help='Train list')
-# parser.add_argument('--test_list',      type=str,   default="data/test_list.txt",   help='Evaluation list')
-# parser.add_argument('--train_path',     type=str,   default="data/voxceleb2", help='Absolute path to the train set')
-# parser.add_argument('--test_path',      type=str,   default="data/voxceleb1", help='Absolute path to the test set')
-# parser.add_argument('--musan_path',     type=str,   default="data/musan_split", help='Absolute path to the test set')
-# parser.add_argument('--rir_path',       type=str,   default="data/RIRS_NOISES/simulated_rirs", help='Absolute path to the test set')
+parser.add_argument('--train_list',     type=str,   default="data/train_list.txt",  help='Train list')
+parser.add_argument('--test_list',      type=str,   default="data/test_list.txt",   help='Evaluation list')
+parser.add_argument('--train_path',     type=str,   default="data/voxceleb2", help='Absolute path to the train set')
+parser.add_argument('--test_path',      type=str,   default="data/voxceleb1", help='Absolute path to the test set')
+parser.add_argument('--musan_path',     type=str,   default="data/musan_split", help='Absolute path to the test set')
+parser.add_argument('--rir_path',       type=str,   default="data/RIRS_NOISES/simulated_rirs", help='Absolute path to the test set')
 
 ## Model definition
 parser.add_argument('--n_mels',         type=int,   default=40,     help='Number of mel filterbanks')
