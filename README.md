@@ -1,6 +1,6 @@
 # ASML ASV
 
-This repository contains the training/inference code from the Acoustic, Speech Signal Processing and Machine Learning (ASML) Lab. of Hanyang University.
+This repository contains the automatic speaker verification training/inference code from the Acoustic, Speech Signal Processing and Machine Learning (ASML) Lab. of Hanyang University.
 
 Our work is based on VoxCeleb trainer from NAVER corpus, please refer to [LICENSE_clovaai.md](/LICENSE_clovaai.md) for details.
 
