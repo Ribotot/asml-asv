@@ -1,7 +1,7 @@
 # ASML ASV
 
 This repository contains the training/inference code from the Acoustic, Speech Signal Processing and Machine Learning (ASML) Lab. of Hanyang University.
-Our work is based on VoxCeleb trainer from NAVER corpus, please refer to LICENSE_clovaai.md (../blob/master/LICENSE_clovaai) for details.
+Our work is based on VoxCeleb trainer from NAVER corpus, please refer to LICENSE_clovaai.md (../Ribotot/asml-asv/LICENSE_clovaai) for details.
 Code for other datasets other than VoxCeleb will be added. 
 
 ### model & loss
