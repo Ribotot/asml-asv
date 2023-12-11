@@ -40,8 +40,8 @@ This trainer uses many models and loss functions that have been proposed in prev
 #### ECAPA-TDNN
 ```
 @inproceedings{desplanques20_interspeech,
-  author={Brecht Desplanques and Jenthe Thienpondt and Kris Demuynck},
   title={{ECAPA-TDNN: Emphasized Channel Attention, Propagation and Aggregation in TDNN Based Speaker Verification}},
+  author={Brecht Desplanques and Jenthe Thienpondt and Kris Demuynck},
   booktitle={Proc. Interspeech},
   pages={3830--3834},
   year={2016}
