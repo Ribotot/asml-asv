@@ -6,7 +6,7 @@ import torchaudio
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
-from clova.models.ResNetBlocks import *
+from models.clova.ResNetBlocks import *
 
 class ResNetSE(nn.Module):
     def __init__(self, block, layers, num_filters, nOut, encoder_type='SAP', n_mels=40, log_input=True, **kwargs):
