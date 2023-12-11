@@ -170,7 +170,7 @@ class train_dataset_loader(Dataset):
 
 
 class test_dataset_loader(Dataset):
-    def __init__(self, test_list, test_path, max_frames, num_eval, **kwargs):
+    def __init__(self, test_list, test_path, max_frames, **kwargs):
         self.max_frames = max_frames;
         self.test_path  = test_path
         self.test_list  = test_list
