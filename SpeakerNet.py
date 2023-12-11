@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import numpy, sys, random
 import time, itertools, importlib
 
-from DatasetLoader import test_dataset_loader
+from dataloader_voxceleb import test_dataset_loader
 from torch.cuda.amp import autocast, GradScaler
 
 
@@ -56,8 +56,6 @@ class ModelTrainer(object):
     def __init__(self, speaker_model, optimizer, scheduler, gpu, mixedprec, **kwargs):
 
         self.__model__ = speaker_model
-
-        print("Model para number = %.2f"%(sum(param.numel() for param in self.__model__.__S__.parameters()) / 1024 / 1024))
 
         Optimizer = importlib.import_module("optimizer." + optimizer).__getattribute__("Optimizer")
         self.__optimizer__ = Optimizer(self.__model__.parameters(), **kwargs)
