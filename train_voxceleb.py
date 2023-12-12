@@ -12,6 +12,7 @@ import datetime
 from tuneThreshold import *
 from SpeakerNet import *
 from dataloader_voxceleb import *
+from utils import *
 import torch.distributed as dist
 import torch.multiprocessing as mp
 warnings.simplefilter("ignore")
@@ -136,6 +137,7 @@ def main_worker(gpu, ngpus_per_node, args):
     if args.gpu == 0:
         ## Write args to scorefile
         scorefile   = open(args.result_save_path+"/scores.txt", "a+")
+        dict2scp(args.result_save_path+"/args.scp", vars(args))
 
     ## Initialise trainer and data loader
     train_dataset = train_dataset_loader(**vars(args))

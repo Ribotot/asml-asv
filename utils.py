@@ -1,6 +1,7 @@
 #! /usr/bin/python
 # -*- encoding: utf-8 -*-
 
+import json
 import torch
 import torch.nn.functional as F
 
@@ -18,6 +19,11 @@ def accuracy(output, target, topk=(1,)):
         correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
+
+def dict2scp(scp, dicts):
+    """write dictionary to scp file"""
+    with open(scp, 'w') as file:
+        file.write(json.dumps(dicts))
 
 class PreEmphasis(torch.nn.Module):
 
