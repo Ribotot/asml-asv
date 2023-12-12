@@ -91,8 +91,9 @@ class PreEmphasis(torch.nn.Module):
         return F.conv1d(input, self.flipped_filter).squeeze(1)
 
 class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my experiences, C=1024 slightly improves the performance but need more training time.
-    def __init__(self, C = 512, nOut = 256, n_mels = 80, **kwargs):
+    def __init__(self, C = 512, nOut = 256, n_mels = 80, log_input = True, **kwargs):
         super(ECAPA_TDNN, self).__init__()
+        self.log_input = log_input
         self.conv1  = nn.Conv1d(n_mels, C, kernel_size=5, stride=1, padding=2)
         self.relu   = nn.ReLU()
         self.bn1    = nn.BatchNorm1d(C)
@@ -151,7 +152,7 @@ class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my expe
                         shortage    = math.floor( ( max_audio - audiosize + 1 ) / 2 )
                         x = F.pad(x, (shortage,shortage), "constant", 0)          
                 x = self.torchfbank(x)+1e-6
-                x = x.log()
+                if self.log_input: x = x.log()
                 x = x - torch.mean(x, dim=-1, keepdim=True)
                 x = x[:,:,1:-1]
                 x = x.detach()
