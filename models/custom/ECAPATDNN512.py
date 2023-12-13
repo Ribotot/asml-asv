@@ -18,7 +18,7 @@ class SEModule(nn.Module):
             nn.AdaptiveAvgPool1d(1),
             nn.Conv1d(channels, bottleneck, kernel_size=1, padding=0),
             nn.ReLU(),
-            nn.BatchNorm1d(bottleneck),
+            # nn.BatchNorm1d(bottleneck), # [TaoRuijie] remove this layer 
             nn.Conv1d(bottleneck, channels, kernel_size=1, padding=0),
             nn.Sigmoid(),
             )
@@ -90,9 +90,53 @@ class PreEmphasis(torch.nn.Module):
         input = F.pad(input, (1, 0), 'reflect')
         return F.conv1d(input, self.flipped_filter).squeeze(1)
 
+class FbankAug(nn.Module):
+
+    def __init__(self, freq_mask_width = (0, 8), time_mask_width = (0, 10)):
+        self.time_mask_width = time_mask_width
+        self.freq_mask_width = freq_mask_width
+        super().__init__()
+
+    def mask_along_axis(self, x, dim):
+        original_size = x.shape
+        batch, fea, time = x.shape
+        if dim == 1:
+            D = fea
+            width_range = self.freq_mask_width
+        else:
+            D = time
+            width_range = self.time_mask_width
+
+        mask_len = torch.randint(width_range[0], width_range[1], (batch, 1), device=x.device).unsqueeze(2)
+        mask_pos = torch.randint(0, max(1, D - mask_len.max()), (batch, 1), device=x.device).unsqueeze(2)
+        arange = torch.arange(D, device=x.device).view(1, 1, -1)
+        mask = (mask_pos <= arange) * (arange < (mask_pos + mask_len))
+        mask = mask.any(dim=1)
+
+        if dim == 1:
+            mask = mask.unsqueeze(2)
+        else:
+            mask = mask.unsqueeze(1)
+            
+        x = x.masked_fill_(mask, 0.0)
+        return x.view(*original_size)
+
+    def forward(self, x):    
+        x = self.mask_along_axis(x, dim=2)
+        x = self.mask_along_axis(x, dim=1)
+        return x
+
 class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my experiences, C=1024 slightly improves the performance but need more training time.
     def __init__(self, C = 512, nOut = 256, n_mels = 80, log_input = True, **kwargs):
         super(ECAPA_TDNN, self).__init__()
+        
+        self.torchfbank = torch.nn.Sequential(
+            PreEmphasis(),            
+            torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, \
+                                                 f_min = 20, f_max = 7600, window_fn=torch.hamming_window, n_mels=80),
+            )
+        self.specaug = FbankAug() # Spec augmentation
+
         self.log_input = log_input
         self.conv1  = nn.Conv1d(n_mels, C, kernel_size=5, stride=1, padding=2)
         self.relu   = nn.ReLU()
@@ -101,10 +145,7 @@ class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my expe
         self.layer2 = Bottle2neck(C, C, kernel_size=3, dilation=3, scale=8)
         self.layer3 = Bottle2neck(C, C, kernel_size=3, dilation=4, scale=8)
         self.layer4 = nn.Conv1d(3*C, 1536, kernel_size=1)
-        self.torchfbank = torch.nn.Sequential(
-            PreEmphasis(),
-            torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min = 20, f_max = 7600, window_fn=torch.hamming_window, n_mels=n_mels),
-            )
+
         self.attention = nn.Sequential(
             nn.Conv1d(4608, 256, kernel_size=1),
             nn.ReLU(),
@@ -116,7 +157,6 @@ class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my expe
         self.bn5 = nn.BatchNorm1d(3072)
         self.fc6 = nn.Linear(3072, nOut)
         self.bn6 = nn.BatchNorm1d(nOut)
-
 
     def _before_pooling(self, x):
         x = self.conv1(x)
@@ -141,7 +181,7 @@ class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my expe
         x = self.bn6(x)
         return x
 
-    def wave2feat(self, x, max_frame=False):
+    def wave2feat(self, x, max_frame=False, aug=False):
         with torch.no_grad():
             with torch.cuda.amp.autocast(enabled=False):
                 if max_frame:
@@ -155,6 +195,7 @@ class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my expe
                 if self.log_input: x = x.log()
                 x = x - torch.mean(x, dim=-1, keepdim=True)
                 x = x[:,:,1:-1]
+                if aug == True: x = self.specaug(x)
                 x = x.detach()
         return x
 

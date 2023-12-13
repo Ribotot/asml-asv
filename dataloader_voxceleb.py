@@ -23,29 +23,35 @@ def worker_init_fn(worker_id):
     numpy.random.seed(numpy.random.get_state()[1][0] + worker_id)
 
 
-def loadWAV(filename, max_frames):
-
-    # Maximum audio length
-    max_audio = max_frames * 160 + 240
-
+def loadWAV(filename, max_frames=False):
     # Read wav file and convert to torch tensor
     audio, sample_rate = soundfile.read(filename)
 
     audiosize = audio.shape[0]
 
-    if audiosize <= max_audio:
-        shortage    = max_audio - audiosize + 1 
-        audio       = numpy.pad(audio, (0, shortage), 'wrap')
-        audiosize   = audio.shape[0]
+    # Maximum audio length
+    if max_frames == False:
+        max_audio = audiosize
 
-    startframe = numpy.array([numpy.int64(random.random()*(audiosize-max_audio))])
-    
-    feats = []
-    if max_frames == 0:
+        feats = []
         feats.append(audio)
+
     else:
-        for asf in startframe:
-            feats.append(audio[int(asf):int(asf)+max_audio])
+        max_audio = max_frames * 160 + 240
+
+        if audiosize <= max_audio:
+            shortage    = max_audio - audiosize + 1 
+            audio       = numpy.pad(audio, (0, shortage), 'wrap')
+            audiosize   = audio.shape[0]
+
+        startframe = numpy.array([numpy.int64(random.random()*(audiosize-max_audio))])
+        
+        feats = []
+        if max_frames == 0:
+            feats.append(audio)
+        else:
+            for asf in startframe:
+                feats.append(audio[int(asf):int(asf)+max_audio])
 
     feat = numpy.stack(feats,axis=0).astype(numpy.float)
 
@@ -118,8 +124,11 @@ class train_dataset_loader(Dataset):
             lines = dataset_file.readlines();
 
         # Make a dictionary of ID names and ID indices
-        # dictkeys = list(set([x.split()[0].split('-')[0] for x in lines]))
-        dictkeys = list(set([x.split()[0] for x in lines]))
+        ## Please note that, if you extract utterances based on kaldi (scp file), you will get spk-video-utt. This code is used for kaldi-based scp file. ##
+        dictkeys = list(set([x.split()[0].split('-')[0] for x in lines]))
+        ## Please use the folloing code. ##
+        # dictkeys = list(set([x.split()[0] for x in lines]))
+        
         dictkeys.sort()
         dictkeys = { key : ii for ii, key in enumerate(dictkeys) }
 
@@ -130,8 +139,11 @@ class train_dataset_loader(Dataset):
         for lidx, line in enumerate(lines):
             data = line.strip().split();
 
-            # speaker_label = dictkeys[data[0].split('-')[0]];
-            speaker_label = dictkeys[data[0]];
+            ## Please note that, if you extract utterances based on kaldi (scp file), you will get spk-video-utt. This code is used for kaldi-based scp file. ##
+            speaker_label = dictkeys[data[0].split('-')[0]];
+            ## Please use the folloing code. ##
+            # speaker_label = dictkeys[data[0]];
+
             filename = os.path.join(train_path,data[1]);
             
             self.data_label.append(speaker_label)
@@ -171,7 +183,8 @@ class train_dataset_loader(Dataset):
 
 class test_dataset_loader(Dataset):
     def __init__(self, test_list, test_path, max_frames, **kwargs):
-        self.max_frames = max_frames;
+        self.max_frames = False;
+        # self.max_frames = max_frames;
         self.test_path  = test_path
         self.test_list  = test_list
 

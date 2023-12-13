@@ -3,6 +3,7 @@ nOut: 256
 max_frames: 200
 batch_size: 200
 trainfunc: clova.aamsoftmax
+scheduler: multisteplr
 n_mels: 80
 log_input: True
 max_seg_per_spk: 500

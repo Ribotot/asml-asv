@@ -9,6 +9,7 @@ import time, itertools, importlib
 
 from dataloader_voxceleb import test_dataset_loader
 from torch.cuda.amp import autocast, GradScaler
+from utils import save_on_master
 
 
 class WrappedModel(nn.Module):
@@ -228,22 +229,34 @@ class ModelTrainer(object):
 
         return (all_scores, all_labels, all_trials)
 
+
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Save parameters
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
     def saveParameters(self, path):
-
-        torch.save(self.__model__.module.state_dict(), path)
+        save_dict = {
+            'network': self.__model__.module.state_dict(),
+            'optimizer': self.__optimizer__.state_dict(),
+        }
+        save_on_master(save_dict, path)
 
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Load parameters
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
     def loadParameters(self, path):
-
         self_state = self.__model__.module.state_dict()
-        loaded_state = torch.load(path, map_location="cuda:%d" % self.gpu)
+        checkpoint = torch.load(path, map_location="cpu")
+        print("Ckpt file %s loaded!"%(path))
+
+        if 'network' not in checkpoint.keys():
+            loaded_state = checkpoint
+        else:
+            self.__optimizer__.load_state_dict(checkpoint['optimizer'])
+            print("Optimizer loaded!")
+            loaded_state = checkpoint['network']
+
         if len(loaded_state.keys()) == 1 and "model" in loaded_state:
             loaded_state = loaded_state["model"]
             newdict = {}
@@ -269,3 +282,4 @@ class ModelTrainer(object):
                 continue
 
             self_state[name].copy_(param)
+        print("Model loaded!")

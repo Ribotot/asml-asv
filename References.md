@@ -20,7 +20,7 @@ This trainer uses many models and loss functions that have been proposed in prev
 @inproceedings{nagrani2017voxceleb,
   title={VoxCeleb: A Large-Scale Speaker Identification Dataset},
   author={Nagrani, Arsha and Chung, Joon Son and Zisserman, Andrew},
-  booktitle={Proc. Interspeech},
+  booktitle={Interspeech},
   pages={2616--2620},
   year={2017}
 }
@@ -31,21 +31,9 @@ This trainer uses many models and loss functions that have been proposed in prev
 @inproceedings{he2016deep,
   title={Deep residual learning for image recognition},
   author={He, Kaiming and Zhang, Xiangyu and Ren, Shaoqing and Sun, Jian},
-  booktitle={Proc. IEEE Conference on Computer Vision and Pattern Recognition},
+  booktitle={IEEE Conference on Computer Vision and Pattern Recognition},
   pages={770--778},
   year={2016}
-}
-```
-
-#### ECAPA-TDNN
-```
-@inproceedings{desplanques20_interspeech,
-  title={{ECAPA-TDNN: Emphasized Channel Attention, Propagation and Aggregation in TDNN Based Speaker Verification}},
-  author={Brecht Desplanques and Jenthe Thienpondt and Kris Demuynck},
-  booktitle={Proc. Interspeech},
-  pages={3830--3834},
-  year={2016}
-  doi={10.21437/Interspeech.2020-2650}
 }
 ```
 
@@ -58,7 +46,7 @@ This trainer uses many models and loss functions that have been proposed in prev
 @inproceedings{bhattacharya2017deep,
   title={Deep Speaker Embeddings for Short-Duration Speaker Verification},
   author={Bhattacharya, Gautam and Alam, Md Jahangir and Kenny, Patrick},
-  booktitle={Proc. Interspeech},
+  booktitle={Interspeech},
   pages={1517--1521},
   year={2017}
 }
@@ -69,7 +57,7 @@ This trainer uses many models and loss functions that have been proposed in prev
 @inproceedings{okabe2018attentive,
   title={Attentive Statistics Pooling for Deep Speaker Embedding},
   author={Okabe, Koji and Koshinaka, Takafumi and Shinoda, Koichi},
-  booktitle={Proc. Interspeech},
+  booktitle={Interspeech},
   pages={2252--2256},
   year={2018}
 }
@@ -83,7 +71,7 @@ This trainer uses many models and loss functions that have been proposed in prev
 @inproceedings{snell2017prototypical,
   title={Prototypical networks for few-shot learning},
   author={Snell, Jake and Swersky, Kevin and Zemel, Richard},
-  booktitle={Proc. Advances in Neural Information Processing Systems},
+  booktitle={Advances in Neural Information Processing Systems},
   pages={4077--4087},
   year={2017}
 }
@@ -94,7 +82,7 @@ This trainer uses many models and loss functions that have been proposed in prev
 @inproceedings{wan2018generalized,
   title={Generalized end-to-end loss for speaker verification},
   author={Wan, Li and Wang, Quan and Papir, Alan and Moreno, Ignacio Lopez},
-  booktitle={Proc. IEEE International Conference on Acoustics, Speech and Signal Processing},
+  booktitle={IEEE International Conference on Acoustics, Speech and Signal Processing},
   pages={4879--4883},
   year={2018}
 }
@@ -106,7 +94,7 @@ This trainer uses many models and loss functions that have been proposed in prev
 @inproceedings{schroff2015facenet,
   title={Facenet: A unified embedding for face recognition and clustering},
   author={Schroff, Florian and Kalenichenko, Dmitry and Philbin, James},
-  booktitle={Proc. IEEE Conference on Computer Vision and Pattern Recognition},
+  booktitle={IEEE Conference on Computer Vision and Pattern Recognition},
   pages={815--823},
   year={2015}
 }
@@ -117,7 +105,7 @@ This trainer uses many models and loss functions that have been proposed in prev
 @inproceedings{wang2018cosface,
   title={Cosface: Large margin cosine loss for deep face recognition},
   author={Wang, Hao and Wang, Yitong and Zhou, Zheng and Ji, Xing and Gong, Dihong and Zhou, Jingchao and Li, Zhifeng and Liu, Wei},
-  booktitle={Proc. IEEE Conference on Computer Vision and Pattern Recognition},
+  booktitle={IEEE Conference on Computer Vision and Pattern Recognition},
   pages={5265--5274},
   year={2018}
 }
@@ -128,7 +116,7 @@ This trainer uses many models and loss functions that have been proposed in prev
 @inproceedings{deng2019arcface,
   title={Arcface: Additive angular margin loss for deep face recognition},
   author={Deng, Jiankang and Guo, Jia and Xue, Niannan and Zafeiriou, Stefanos},
-  booktitle={Proc. IEEE Conference on Computer Vision and Pattern Recognition},
+  booktitle={IEEE Conference on Computer Vision and Pattern Recognition},
   pages={4690--4699},
   year={2019}
 }
@@ -151,7 +139,7 @@ This trainer uses many models and loss functions that have been proposed in prev
 @inproceedings{ko2017study,
   title={A study on data augmentation of reverberant speech for robust speech recognition},
   author={Ko, Tom and Peddinti, Vijayaditya and Povey, Daniel and Seltzer, Michael L and Khudanpur, Sanjeev},
-  booktitle={Proc. IEEE International Conference on Acoustics, Speech and Signal Processing},
+  booktitle={IEEE International Conference on Acoustics, Speech and Signal Processing},
   pages={5220--5224},
   year={2017}
 }

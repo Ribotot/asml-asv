@@ -2,7 +2,6 @@
 
 python train_voxceleb.py \
 --config ./configs/ECAPATDNN512_AAM.yaml \
---distributed
 
 # python train_voxceleb.py \
 # --config ./configs/ECAPATDNN512_AAM.yaml \

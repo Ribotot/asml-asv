@@ -25,6 +25,9 @@ def dict2scp(scp, dicts):
     with open(scp, 'w') as file:
         file.write(json.dumps(dicts))
 
+def save_on_master(*args, **kwargs):
+    torch.save(*args, **kwargs)
+
 class PreEmphasis(torch.nn.Module):
 
     def __init__(self, coef: float = 0.97):
