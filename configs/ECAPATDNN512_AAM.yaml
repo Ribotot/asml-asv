@@ -1,9 +1,10 @@
 model: custom.ECAPATDNN512
 nOut: 256
 max_frames: 200
-batch_size: 200
+batch_size: 256
+weight_decay: 2e-5
 trainfunc: clova.aamsoftmax
-scheduler: multisteplr
+scheduler: onecyclelr
 n_mels: 80
 log_input: True
 max_seg_per_spk: 500
