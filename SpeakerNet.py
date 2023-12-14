@@ -167,7 +167,7 @@ class ModelTrainer(object):
 
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=nDataLoaderThread, drop_last=False, sampler=sampler)
 
-        ## Extract features for every image
+        ## Extract features for every utterance
         for idx, data in enumerate(test_loader):
             inp1 = data[0][0].cuda()
             with torch.no_grad():
@@ -217,7 +217,7 @@ class ModelTrainer(object):
                     com_feat = F.normalize(com_feat, p=2, dim=1)
 
                 score = numpy.mean(torch.matmul(ref_feat, com_feat.T).detach().cpu().numpy()) # Get the score
-
+                # print(ref_feat.size(), com_feat.size(), score, int(data[0]))
                 all_scores.append(score)
                 all_labels.append(int(data[0]))
                 all_trials.append(data[1] + " " + data[2])

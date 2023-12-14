@@ -27,6 +27,7 @@ parser.add_argument('--config',         type=str,   default=None,   help='Config
 
 ## Data loader
 parser.add_argument('--max_frames',     type=int,   default=200,    help='Input length to the network for training')
+parser.add_argument('--eval_frames',    type=str,   default=None,   help='Input length to the network for testing None uses the whole files')
 parser.add_argument('--batch_size',     type=int,   default=200,    help='Batch size, number of speakers per batch')
 parser.add_argument('--max_seg_per_spk', type=int,  default=500,    help='Maximum number of utterances per speaker per epoch')
 parser.add_argument('--nDataLoaderThread', type=int, default=6,     help='Number of loader threads')
@@ -43,18 +44,18 @@ parser.add_argument('--optimizer',      type=str,   default="adam", help='sgd or
 parser.add_argument('--scheduler',      type=str,   default="multisteplr", help='Learning rate scheduler')
 parser.add_argument('--lr',             type=float, default=0.001,  help='Learning rate')
 parser.add_argument("--lr_decay",       type=float, default=0.5,    help='Learning rate decay')
+parser.add_argument('--weight_decay',   type=float, default=0,      help='Weight decay in the optimizer')
 parser.add_argument("--decay_interval", type=int,   default=10,     help='Learning rate decay interval, only for [steplr] scheduler')
 parser.add_argument("--decay_epochs",   type=str,   default='[40, 45, 50, 55, 60, 65, 70, 75]', help='Learning rate decay epochs, only for [multisteplr] scheduler')
 parser.add_argument("--warmup_epoch",   type=int,   default=10,     help='Learning rate decay epochs, only for [onecyclelr] scheduler')
-parser.add_argument('--weight_decay',   type=float, default=0,      help='Weight decay in the optimizer')
 
 ## Loss functions
-parser.add_argument("--hard_prob",      type=float, default=0.5,    help='Hard negative mining probability, otherwise random, only for [triplet] loss functions')
-parser.add_argument("--hard_rank",      type=int,   default=10,     help='Hard negative mining rank in the batch, only for [triplet] loss functions')
 parser.add_argument('--margin',         type=float, default=0.2,    help='Loss margin, only for some loss functions')
 parser.add_argument('--scale',          type=float, default=30,     help='Loss scale, only for some loss functions')
 parser.add_argument('--nPerSpeaker',    type=int,   default=1,      help='Number of utterances per speaker per batch, only for metric learning based losses')
 parser.add_argument('--nClasses',       type=int,   default=5994,   help='Number of speakers in the softmax layer, only for softmax-based losses')
+parser.add_argument("--hard_prob",      type=float, default=0.5,    help='Hard negative mining probability, otherwise random, only for [triplet] loss functions')
+parser.add_argument("--hard_rank",      type=int,   default=10,     help='Hard negative mining rank in the batch, only for [triplet] loss functions')
 
 ## Evaluation parameters
 parser.add_argument('--dcf_p_target',   type=float, default=0.01,   help='A priori probability of the specified target speaker')
@@ -164,6 +165,9 @@ def main_worker(gpu, ngpus_per_node, args):
         drop_last=True,
     )
 
+    iter(train_sampler)
+    args.epoch_per_sample = len(train_sampler)
+    
     trainer     = ModelTrainer(s, **vars(args))
 
     ## Load model weights

@@ -23,21 +23,21 @@ def worker_init_fn(worker_id):
     numpy.random.seed(numpy.random.get_state()[1][0] + worker_id)
 
 
-def loadWAV(filename, max_frames=False):
+def loadWAV(filename, max_frames=None):
     # Read wav file and convert to torch tensor
     audio, sample_rate = soundfile.read(filename)
 
     audiosize = audio.shape[0]
 
     # Maximum audio length
-    if max_frames == False:
+    if max_frames == None:
         max_audio = audiosize
 
         feats = []
         feats.append(audio)
 
     else:
-        max_audio = max_frames * 160 + 240
+        max_audio = int(max_frames) * 160 + 240
 
         if audiosize <= max_audio:
             shortage    = max_audio - audiosize + 1 
@@ -47,11 +47,8 @@ def loadWAV(filename, max_frames=False):
         startframe = numpy.array([numpy.int64(random.random()*(audiosize-max_audio))])
         
         feats = []
-        if max_frames == 0:
-            feats.append(audio)
-        else:
-            for asf in startframe:
-                feats.append(audio[int(asf):int(asf)+max_audio])
+        for asf in startframe:
+            feats.append(audio[int(asf):int(asf)+max_audio])
 
     feat = numpy.stack(feats,axis=0).astype(numpy.float)
 
@@ -128,7 +125,7 @@ class train_dataset_loader(Dataset):
         dictkeys = list(set([x.split()[0].split('-')[0] for x in lines]))
         ## Please use the folloing code. ##
         # dictkeys = list(set([x.split()[0] for x in lines]))
-        
+
         dictkeys.sort()
         dictkeys = { key : ii for ii, key in enumerate(dictkeys) }
 
@@ -158,6 +155,10 @@ class train_dataset_loader(Dataset):
             audio = loadWAV(self.data_list[index], self.max_frames)
             
             if self.augment:
+                RIR_augtype = random.random()    
+                if RIR_augtype > 0.5:
+                    audio   = self.augment_wav.reverberate(audio)
+
                 Noise_augtype = random.random()
                 if Noise_augtype > 0.85:
                     audio   = self.augment_wav.additive_noise('music',audio)
@@ -166,9 +167,6 @@ class train_dataset_loader(Dataset):
                 elif Noise_augtype > 0.5:
                     audio   = self.augment_wav.additive_noise('noise',audio)
                 
-                RIR_augtype = random.random()    
-                if RIR_augtype > 0.5:
-                    audio   = self.augment_wav.reverberate(audio)
 
             feat.append(audio);
 
@@ -182,14 +180,13 @@ class train_dataset_loader(Dataset):
 
 
 class test_dataset_loader(Dataset):
-    def __init__(self, test_list, test_path, max_frames, **kwargs):
-        self.max_frames = False;
-        # self.max_frames = max_frames;
+    def __init__(self, test_list, test_path, eval_frames=None, **kwargs):
+        self.eval_frames = eval_frames;
         self.test_path  = test_path
         self.test_list  = test_list
 
     def __getitem__(self, index):
-        audio = loadWAV(os.path.join(self.test_path,self.test_list[index]), self.max_frames)
+        audio = loadWAV(os.path.join(self.test_path,self.test_list[index]), self.eval_frames)
         return torch.FloatTensor(audio), self.test_list[index]
 
     def __len__(self):

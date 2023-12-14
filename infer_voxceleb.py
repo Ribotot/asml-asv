@@ -24,6 +24,7 @@ parser.add_argument('--config',         type=str,   default=None,   help='Config
 
 ## Data loader
 parser.add_argument('--max_frames',     type=int,   default=200,    help='Input length to the network for training')
+parser.add_argument('--eval_frames',    type=str,   default=None,   help='Input length to the network for testing None uses the whole files')
 parser.add_argument('--batch_size',     type=int,   default=200,    help='Batch size, number of speakers per batch')
 parser.add_argument('--max_seg_per_spk', type=int,  default=500,    help='Maximum number of utterances per speaker per epoch')
 parser.add_argument('--nDataLoaderThread', type=int, default=5,     help='Number of loader threads')
@@ -43,9 +44,7 @@ parser.add_argument("--lr_decay",       type=float, default=0.95,   help='Learni
 parser.add_argument('--weight_decay',   type=float, default=0,      help='Weight decay in the optimizer')
 
 ## Loss functions
-parser.add_argument("--hard_prob",      type=float, default=0.5,    help='Hard negative mining probability, otherwise random, only for some loss functions')
-parser.add_argument("--hard_rank",      type=int,   default=10,     help='Hard negative mining rank in the batch, only for some loss functions')
-parser.add_argument('--margin',         type=float, default=0.1,    help='Loss margin, only for some loss functions')
+parser.add_argument('--margin',         type=float, default=0.2,    help='Loss margin, only for some loss functions')
 parser.add_argument('--scale',          type=float, default=30,     help='Loss scale, only for some loss functions')
 parser.add_argument('--nPerSpeaker',    type=int,   default=1,      help='Number of utterances per speaker per batch, only for metric learning based losses')
 parser.add_argument('--nClasses',       type=int,   default=5994,   help='Number of speakers in the softmax layer, only for softmax-based losses')
@@ -117,6 +116,7 @@ def main_worker(gpu, ngpus_per_node, args):
     ## Write args to scorefile
     scorefile   = open(args.result_save_path+"/scores.txt", "a+")
     args.gpu = args.gpu_id
+
     trainer     = ModelTrainer(s, **vars(args))
 
     ## Load model weights
