@@ -140,7 +140,7 @@ class train_dataset_loader(Dataset):
             speaker_label = dictkeys[data[0].split('-')[0]];
             ## Please use the folloing code. ##
             # speaker_label = dictkeys[data[0]];
-
+            
             filename = os.path.join(train_path,data[1]);
             
             self.data_label.append(speaker_label)
@@ -149,9 +149,9 @@ class train_dataset_loader(Dataset):
     def __getitem__(self, indices):
 
         feat = []
+        #z#
 
         for index in indices:
-            
             audio = loadWAV(self.data_list[index], self.max_frames)
             
             if self.augment:
@@ -232,6 +232,7 @@ class train_dataset_sampler(torch.utils.data.Sampler):
         for findex, key in enumerate(dictkeys):
             data    = data_dict[key]
             numSeg  = round_down(min(len(data),self.max_seg_per_spk),self.nPerSpeaker)
+
             
             rp      = lol(numpy.arange(numSeg),self.nPerSpeaker)
             flattened_label.extend([findex] * (len(rp)))

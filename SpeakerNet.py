@@ -4,11 +4,12 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy, sys, random
+import numpy, sys, random, math
 import time, itertools, importlib
 
 from dataloader_voxceleb import test_dataset_loader
 from torch.cuda.amp import autocast, GradScaler
+# from utils import save_on_master, clip_gradients
 from utils import save_on_master
 
 
@@ -54,7 +55,7 @@ class SpeakerNet(nn.Module):
 
 
 class ModelTrainer(object):
-    def __init__(self, speaker_model, optimizer, scheduler, gpu, mixedprec, **kwargs):
+    def __init__(self, speaker_model, optimizer, scheduler, gpu, mixedprec, clip_grad, **kwargs):
 
         self.__model__ = speaker_model
 
@@ -67,6 +68,8 @@ class ModelTrainer(object):
         self.scaler = GradScaler()
 
         self.gpu = gpu
+
+        self.clip_grad = clip_grad
 
         self.mixedprec = mixedprec
 
@@ -100,12 +103,25 @@ class ModelTrainer(object):
 
             if self.mixedprec:
                 with autocast():
-                    nloss, prec1 = self.__model__(data, label)
+                    nloss, prec1 = self.__model__(data, label)                
+                    if not math.isfinite(nloss.item()):
+                        print("Loss is {}, stopping training".format(nloss.item()), force=True)
+                        sys.exit(1)
                 self.scaler.scale(nloss).backward()
+                param_norms = None
+                if self.clip_grad:
+                    param_norms = clip_gradients(self.__model__, self.clip_grad)
                 self.scaler.step(self.__optimizer__)
                 self.scaler.update()
             else:
                 nloss, prec1 = self.__model__(data, label)
+                if not math.isfinite(nloss.item()):
+                    print("Loss is {}, stopping training".format(nloss.item()), force=True)
+                    sys.exit(1)
+                param_norms = None
+                if self.clip_grad:
+                    # param_norms = clip_gradients(self.__model__, self.clip_grad)
+                    nn.utils.clip_grad_value_(self.__model__.parameters(), clip_value=self.clip_grad)
                 nloss.backward()
                 self.__optimizer__.step()
 
