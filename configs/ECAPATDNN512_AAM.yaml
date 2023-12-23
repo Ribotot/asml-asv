@@ -1,5 +1,5 @@
 model: custom.ECAPATDNN512
-nOut: 256
+nOut: 192
 max_frames: 200
 batch_size: 256
 weight_decay: 2e-5
