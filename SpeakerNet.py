@@ -108,9 +108,9 @@ class ModelTrainer(object):
                         print("Loss is {}, stopping training".format(nloss.item()), force=True)
                         sys.exit(1)
                 self.scaler.scale(nloss).backward()
-                param_norms = None
                 if self.clip_grad:
-                    param_norms = clip_gradients(self.__model__, self.clip_grad)
+                    # param_norms = clip_gradients(self.__model__, self.clip_grad)
+                    nn.utils.clip_grad_norm_(self.__model__.parameters(), max_norm=self.clip_grad)
                 self.scaler.step(self.__optimizer__)
                 self.scaler.update()
             else:
@@ -118,10 +118,9 @@ class ModelTrainer(object):
                 if not math.isfinite(nloss.item()):
                     print("Loss is {}, stopping training".format(nloss.item()), force=True)
                     sys.exit(1)
-                param_norms = None
                 if self.clip_grad:
                     # param_norms = clip_gradients(self.__model__, self.clip_grad)
-                    nn.utils.clip_grad_value_(self.__model__.parameters(), clip_value=self.clip_grad)
+                    nn.utils.clip_grad_norm_(self.__model__.parameters(), max_norm=self.clip_grad)
                 nloss.backward()
                 self.__optimizer__.step()
 
@@ -233,7 +232,6 @@ class ModelTrainer(object):
                     com_feat = F.normalize(com_feat, p=2, dim=1)
 
                 score = numpy.mean(torch.matmul(ref_feat, com_feat.T).detach().cpu().numpy()) # Get the score
-                # print(ref_feat.size(), com_feat.size(), score, int(data[0]))
                 all_scores.append(score)
                 all_labels.append(int(data[0]))
                 all_trials.append(data[1] + " " + data[2])
@@ -254,6 +252,7 @@ class ModelTrainer(object):
         save_dict = {
             'network': self.__model__.module.state_dict(),
             'optimizer': self.__optimizer__.state_dict(),
+            'scheduler':self.__scheduler__.state_dict(),
         }
         save_on_master(save_dict, path)
 
@@ -271,6 +270,8 @@ class ModelTrainer(object):
         else:
             self.__optimizer__.load_state_dict(checkpoint['optimizer'])
             print("Optimizer loaded!")
+            self.__scheduler__.load_state_dict(checkpoint['scheduler'])
+            print("Scheduler loaded!")
             loaded_state = checkpoint['network']
 
         if len(loaded_state.keys()) == 1 and "model" in loaded_state:
