@@ -122,10 +122,10 @@ class ModelInferencer(object):
         return (all_scores, all_labels, all_trials)
 
     ## ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
-    ## Evaluate from list with speaker adaptive score normalize (SASN)
+    ## Evaluate from list with score normalize (adaptive s-norm)
     ## ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
 
-    def evaluateFromList_easy_SASN(self, test_list, test_path, nDataLoaderThread, distributed, coh_size=100, print_interval=100, **kwargs):
+    def evaluateFromList_easy_aSn(self, test_list, test_path, nDataLoaderThread, distributed, coh_size=100, print_interval=100, **kwargs):
 
         if distributed:
             rank = torch.distributed.get_rank()

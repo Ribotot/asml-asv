@@ -150,7 +150,7 @@ def main_worker(gpu, ngpus_per_node, args):
     elif args.evaluate_type == "save_te":
         sc, lab, _ = trainer.evaluateFromList_saveSE(**vars(args))
     elif args.evaluate_type == "easy_sn":
-        sc, lab, _ = trainer.evaluateFromList_easy_SASN(**vars(args))
+        sc, lab, _ = trainer.evaluateFromList_easy_aSn(**vars(args))
     else:
         raise ValueError('Undefined evaluate type')    
 

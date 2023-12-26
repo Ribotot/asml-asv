@@ -145,3 +145,14 @@ This trainer uses many models and loss functions that have been proposed in prev
 }
 ```
 
+#### Adaptive S-norm
+```
+@inproceedings{matejka17scorenorm,
+  title={Analysis of Score Normalization in Multilingual Speaker Recognition},
+  author={Pavel Matějka and Ondřej Novotný and Oldřich Plchot and Lukáš Burget and Mireia Diez Sánchez and Jan Černocký},
+  year=2017,
+  booktitle={Interspeech},
+  pages={1567--1571},
+}
+```
+
