@@ -18,6 +18,7 @@ model and loss are organized into three folders: asml/clova/custom.
 Please modify some of the data set paths
 
 [train_voxceleb.py](/train_voxceleb.py) 
+
 [infer_voxceleb.py](/infer_voxceleb.py) 
 
 Please check the "dictkeys" and "speaker_label" of train_dataset_loader in [dataloader_voxceleb.py](/dataloader_voxceleb.py).
