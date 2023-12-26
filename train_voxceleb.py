@@ -31,7 +31,8 @@ parser.add_argument('--eval_frames',    type=str,   default=None,   help='Input 
 parser.add_argument('--batch_size',     type=int,   default=200,    help='Batch size, number of speakers per batch')
 parser.add_argument('--max_seg_per_spk', type=int,  default=500,    help='Maximum number of utterances per speaker per epoch')
 parser.add_argument('--nDataLoaderThread', type=int, default=6,     help='Number of loader threads')
-parser.add_argument('--augment',        type=bool,  default=False,  help='Augment input')
+parser.add_argument('--augment_noise',  type=bool,  default=False,  help='Augment noise and RIR to input')
+parser.add_argument('--augment_specaug',type=bool,  default=False,  help='Augment specaugmentation to input')
 parser.add_argument('--seed',           type=int,   default=10,     help='Seed for the random number generator')
 
 ## Training details
@@ -167,8 +168,8 @@ def main_worker(gpu, ngpus_per_node, args):
         drop_last=True,
     )
 
-    iter(train_sampler)
-    args.epoch_per_sample = len(train_sampler)
+    # iter(train_sampler)
+    args.epoch_per_sample = len(train_dataset) # if we use "len(train_sampler)", it might be cause minor error for scheduler
     
     trainer     = ModelTrainer(s, **vars(args))
 

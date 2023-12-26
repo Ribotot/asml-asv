@@ -3,7 +3,7 @@
 
 import torch
 
-def Scheduler(optimizer, decay_interval, max_epoch, lr_decay, **kwargs):
+def Scheduler(optimizer, max_epoch, lr_decay, decay_interval=10, **kwargs):
 
 	sche_fn = torch.optim.lr_scheduler.StepLR(optimizer, step_size=decay_interval, gamma=lr_decay)
 

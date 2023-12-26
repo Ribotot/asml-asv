@@ -8,5 +8,4 @@ python train_voxceleb.py \
 # --distributed
 
 # python train_voxceleb.py \
-# --save_path exp/ResNetSE34L_AM_exp \
-# --config ./configs/ResNetSE34L_AM.yaml
+# --config ./configs/ResNetSE34L_AAM.yaml

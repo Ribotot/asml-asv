@@ -106,7 +106,7 @@ class AugmentWAV(object):
 
 
 class train_dataset_loader(Dataset):
-    def __init__(self, train_list, augment, musan_path, rir_path, max_frames, train_path, **kwargs):
+    def __init__(self, train_list, augment_noise, musan_path, rir_path, max_frames, train_path, **kwargs):
 
         self.augment_wav = AugmentWAV(musan_path=musan_path, rir_path=rir_path, max_frames = max_frames)
 
@@ -114,7 +114,7 @@ class train_dataset_loader(Dataset):
         self.max_frames = max_frames;
         self.musan_path = musan_path
         self.rir_path   = rir_path
-        self.augment    = augment
+        self.augment_noise    = augment_noise
         
         # Read training files
         with open(train_list) as dataset_file:
@@ -140,7 +140,7 @@ class train_dataset_loader(Dataset):
             speaker_label = dictkeys[data[0].split('-')[0]];
             ## Please use the folloing code. ##
             # speaker_label = dictkeys[data[0]];
-            
+
             filename = os.path.join(train_path,data[1]);
             
             self.data_label.append(speaker_label)
@@ -154,7 +154,7 @@ class train_dataset_loader(Dataset):
         for index in indices:
             audio = loadWAV(self.data_list[index], self.max_frames)
             
-            if self.augment:
+            if self.augment_noise:
                 RIR_augtype = random.random()    
                 if RIR_augtype > 0.5:
                     audio   = self.augment_wav.reverberate(audio)
@@ -174,7 +174,7 @@ class train_dataset_loader(Dataset):
 
         return torch.FloatTensor(feat), self.data_label[index]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data_list)
 
 

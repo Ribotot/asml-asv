@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchaudio
+from models.custom.utils import FbankAug
 
 class SEModule(nn.Module):
     def __init__(self, channels, bottleneck=128):
@@ -90,46 +91,10 @@ class PreEmphasis(torch.nn.Module):
         input = F.pad(input, (1, 0), 'reflect')
         return F.conv1d(input, self.flipped_filter).squeeze(1)
 
-class FbankAug(nn.Module):
-
-    def __init__(self, freq_mask_width = (0, 8), time_mask_width = (0, 10)):
-        self.time_mask_width = time_mask_width
-        self.freq_mask_width = freq_mask_width
-        super().__init__()
-
-    def mask_along_axis(self, x, dim):
-        original_size = x.shape
-        batch, fea, time = x.shape
-        if dim == 1:
-            D = fea
-            width_range = self.freq_mask_width
-        else:
-            D = time
-            width_range = self.time_mask_width
-
-        mask_len = torch.randint(width_range[0], width_range[1], (batch, 1), device=x.device).unsqueeze(2)
-        mask_pos = torch.randint(0, max(1, D - mask_len.max()), (batch, 1), device=x.device).unsqueeze(2)
-        arange = torch.arange(D, device=x.device).view(1, 1, -1)
-        mask = (mask_pos <= arange) * (arange < (mask_pos + mask_len))
-        mask = mask.any(dim=1)
-
-        if dim == 1:
-            mask = mask.unsqueeze(2)
-        else:
-            mask = mask.unsqueeze(1)
-            
-        x = x.masked_fill_(mask, 0.0)
-        return x.view(*original_size)
-
-    def forward(self, x):    
-        x = self.mask_along_axis(x, dim=2)
-        x = self.mask_along_axis(x, dim=1)
-        return x
-
-class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my experiences, C=1024 slightly improves the performance but need more training time.
+class ECAPA_TDNN(nn.Module):
     def __init__(self, C = 512, nOut = 256, n_mels = 80, log_input = True, **kwargs):
         super(ECAPA_TDNN, self).__init__()
-        
+
         self.torchfbank = torch.nn.Sequential(
             PreEmphasis(),            
             torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, \
@@ -199,21 +164,21 @@ class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my expe
                 x = x.detach()
         return x
 
-    def wave2emb(self, wave, max_frame=False):
-        feat = self.wave2feat(wave, max_frame)
+    def wave2emb(self, wave, max_frame=False, aug=False):
+        feat = self.wave2feat(wave, max_frame, aug=False)
         late_feat = self._before_pooling(feat)
         emb = self._before_penultimate(late_feat)
         return emb
 
 
-    def forward(self, x, max_frame=False):
-        x = self.wave2emb(x, max_frame)
+    def forward(self, x, max_frame=False, aug=False):
+        x = self.wave2emb(x, max_frame, aug=False)
         return x
 
 
-def MainModel(nOut=256, **kwargs):
+def MainModel(**kwargs):
     # Number of filters
-    model = ECAPA_TDNN(nOut, **kwargs)
+    model = ECAPA_TDNN(**kwargs)
     return model
 
 

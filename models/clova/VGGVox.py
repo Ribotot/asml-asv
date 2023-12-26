@@ -1,11 +1,15 @@
 #! /usr/bin/python
 # -*- encoding: utf-8 -*-
 
+# revised
+# Copyright 2023 Choi Jeong-Hwan
+
 import torch
 import torchaudio
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
+from models.custom.utils import FbankAug
 
 class MainModel(nn.Module):
     def __init__(self, nOut = 1024, encoder_type='SAP', log_input=True, **kwargs):
@@ -63,22 +67,18 @@ class MainModel(nn.Module):
 
         self.instancenorm   = nn.InstanceNorm1d(40)
         self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min=0.0, f_max=8000, pad=0, n_mels=40)
+        self.specaug = FbankAug()
 
     def new_parameter(self, *size):
         out = nn.Parameter(torch.FloatTensor(*size))
         nn.init.xavier_normal_(out)
         return out
-        
-    def forward(self, x):
 
-        with torch.no_grad():
-            with torch.cuda.amp.autocast(enabled=False):
-                x = self.torchfb(x)+1e-6
-                if self.log_input: x = x.log()
-                x = self.instancenorm(x).unsqueeze(1)
-
+    def _before_pooling(self, x):
         x = self.netcnn(x);
+        return x
 
+    def _before_penultimate(self, x):
         if self.encoder_type == "MAX" or self.encoder_type == "TAP":
             x = self.encoder(x)
             x = x.view((x.size()[0], -1))
@@ -92,6 +92,26 @@ class MainModel(nn.Module):
             x = torch.sum(x * w, dim=1)
 
         x = self.fc(x);
+        return x
 
-        return x;
+    def wave2feat(self, x, max_frame=False, aug=False):
+        with torch.no_grad():
+            with torch.cuda.amp.autocast(enabled=False):
+                x = self.torchfb(x)+1e-6
+                if self.log_input: x = x.log()
+                x = self.instancenorm(x).unsqueeze(1)
+                if aug == True: x = self.specaug(x)
+                x = x.detach()
+        return x
 
+
+    def wave2emb(self, wave, max_frame=False, aug=False):
+        feat = self.wave2feat(wave, max_frame, aug=False)
+        late_feat = self._before_pooling(feat)
+        emb = self._before_penultimate(late_feat)
+        return emb
+
+
+    def forward(self, x, max_frame=False, aug=False):
+        x = self.wave2emb(x, max_frame, aug=False)
+        return x

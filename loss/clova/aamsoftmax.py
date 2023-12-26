@@ -16,7 +16,7 @@ class LossFunction(nn.Module):
         
         self.m = margin
         self.s = scale
-        self.in_feats = nOut
+        self.nOut = nOut
         self.weight = torch.nn.Parameter(torch.FloatTensor(nClasses, nOut), requires_grad=True)
         self.ce = nn.CrossEntropyLoss()
         nn.init.xavier_normal_(self.weight, gain=1)
@@ -30,11 +30,11 @@ class LossFunction(nn.Module):
         self.mm = math.sin(math.pi - self.m) * self.m
 
         print('Initialised AAMSoftmax margin %.3f scale %.3f'%(self.m,self.s))
-
+        
     def forward(self, x, label=None):
 
         assert x.size()[0] == label.size()[0]
-        assert x.size()[1] == self.in_feats
+        assert x.size()[1] == self.nOut
         
         # cos(theta)
         cosine = F.linear(F.normalize(x), F.normalize(self.weight))

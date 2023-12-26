@@ -16,7 +16,7 @@ class LossFunction(nn.Module):
         
         self.m = margin
         self.s = scale
-        self.in_feats = nOut
+        self.nOut = nOut
         self.W = torch.nn.Parameter(torch.randn(nOut, nClasses), requires_grad=True)
         self.ce = nn.CrossEntropyLoss()
         nn.init.xavier_normal_(self.W, gain=1)
@@ -26,7 +26,7 @@ class LossFunction(nn.Module):
     def forward(self, x, label=None):
 
         assert x.size()[0] == label.size()[0]
-        assert x.size()[1] == self.in_feats
+        assert x.size()[1] == self.nOut
 
         x_norm = torch.norm(x, p=2, dim=1, keepdim=True).clamp(min=1e-12)
         x_norm = torch.div(x, x_norm)

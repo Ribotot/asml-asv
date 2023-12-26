@@ -26,7 +26,7 @@ class WrappedModel(nn.Module):
 
 
 class SpeakerNet(nn.Module):
-    def __init__(self, model, optimizer, trainfunc, nPerSpeaker, **kwargs):
+    def __init__(self, model, optimizer, trainfunc, nPerSpeaker, augment_specaug=False, **kwargs):
         super(SpeakerNet, self).__init__()
 
         SpeakerNetModel = importlib.import_module("models." + model).__getattribute__("MainModel")
@@ -36,11 +36,13 @@ class SpeakerNet(nn.Module):
         self.__L__ = LossFunction(**kwargs)
 
         self.nPerSpeaker = nPerSpeaker
+        self.augment_specaug = augment_specaug
 
     def forward(self, data, label=None):
 
         data = data.reshape(-1, data.size()[-1]).cuda()
-        outp = self.__S__.forward(data)
+        
+        outp = self.__S__.forward(data, aug=self.augment_specaug)
 
         if label == None:
             return outp
@@ -53,9 +55,15 @@ class SpeakerNet(nn.Module):
 
             return nloss, prec1
 
+    def inference(self, data):
+
+        data = data.reshape(-1, data.size()[-1]).cuda()
+        outp = self.__S__.forward(data)
+        
+        return outp
 
 class ModelTrainer(object):
-    def __init__(self, speaker_model, optimizer, scheduler, gpu, mixedprec, clip_grad, **kwargs):
+    def __init__(self, speaker_model, optimizer, scheduler, gpu, mixedprec, clip_grad=3.0, **kwargs):
 
         self.__model__ = speaker_model
 
@@ -186,7 +194,7 @@ class ModelTrainer(object):
         for idx, data in enumerate(test_loader):
             inp1 = data[0][0].cuda()
             with torch.no_grad():
-                ref_feat = self.__model__(inp1).detach().cpu()
+                ref_feat = self.__model__.module.inference(inp1).detach().cpu()
             feats[data[1][0]] = ref_feat
             telapsed = time.time() - tstart
 
@@ -252,7 +260,7 @@ class ModelTrainer(object):
         save_dict = {
             'network': self.__model__.module.state_dict(),
             'optimizer': self.__optimizer__.state_dict(),
-            'scheduler':self.__scheduler__.state_dict(),
+            'scheduler': self.__scheduler__.state_dict(),
         }
         save_on_master(save_dict, path)
 
@@ -285,6 +293,7 @@ class ModelTrainer(object):
             loaded_state.update(newdict)
             for name in delete_list:
                 del loaded_state[name]
+
         for name, param in loaded_state.items():
             origname = name
             if name not in self_state:
@@ -299,4 +308,5 @@ class ModelTrainer(object):
                 continue
 
             self_state[name].copy_(param)
+
         print("Model loaded!")

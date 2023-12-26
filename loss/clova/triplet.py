@@ -10,7 +10,7 @@ import random
 
 class LossFunction(nn.Module):
 
-    def __init__(self, hard_rank=0, hard_prob=0, margin=0, **kwargs):
+    def __init__(self, hard_rank=10, hard_prob=0.5, margin=0, **kwargs):
         super(LossFunction, self).__init__()
 
         self.test_normalize = True
