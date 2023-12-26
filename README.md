@@ -14,8 +14,8 @@ model and loss are organized into three folders: asml/clova/custom.
 
 * "custom" contains what we are developing based on other researchers' work. 
 
-### Please modify the codes
-Please modify some of the data set paths
+### Please modify the codes before the run.
+Please modify the data paths of following files
 
 [train_voxceleb.py](/train_voxceleb.py) 
 
