@@ -2,6 +2,7 @@
 # -*- encoding: utf-8 -*-
 
 import json
+import numpy as np
 import torch
 import torch.nn.functional as F
 
@@ -38,21 +39,28 @@ def clip_gradients(model, clip):
             if clip_coef < 1:
                 p.grad.data.mul_(clip_coef)
     return norms
-    
-class PreEmphasis(torch.nn.Module):
 
-    def __init__(self, coef: float = 0.97):
-        super().__init__()
-        self.coef = coef
-        # make kernel
-        # In pytorch, the convolution operation uses cross-correlation. So, filter is flipped.
-        self.register_buffer(
-            'flipped_filter', torch.FloatTensor([-self.coef, 1.]).unsqueeze(0).unsqueeze(0)
-        )
 
-    def forward(self, input: torch.tensor) -> torch.tensor:
-        assert len(input.size()) == 2, 'The number of dimensions of input tensor must be 2!'
-        # reflect padding to match lengths of in/out
-        input = input.unsqueeze(1)
-        input = F.pad(input, (1, 0), 'reflect')
-        return F.conv1d(input, self.flipped_filter).squeeze(1)
+## ===== ===== ===== ===== 
+##  File-IO functions  
+## ===== ===== ===== ===== 
+
+def load_dict_txt(filepath, dtype=None):
+    dic = dict()
+    for line in open(filepath):
+        key, val = line.rstrip().split(' ', 1)
+        if dtype is not None:
+            val = dtype(val)
+        dic[key] = val
+    return dic
+
+def save_dict_npy(filepath, dictionary):
+    np.save(filepath, dictionary)
+
+def load_dict_npy(filepath):
+    return np.load(filepath, allow_pickle=True).item()
+
+def numpy_normalize(x, p=2, dim=1):
+    l2 = np.atleast_1d(np.linalg.norm(x, p, dim))
+    l2[l2==0] = 1
+    return x / np.expand_dims(l2, dim)

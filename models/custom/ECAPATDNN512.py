@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchaudio
-from models.custom.utils import FbankAug
+from models.custom.utils import FbankAug, PreEmphasis
 
 class SEModule(nn.Module):
     def __init__(self, channels, bottleneck=128):
@@ -77,19 +77,6 @@ class Bottle2neck(nn.Module):
 
         return out 
 
-class PreEmphasis(torch.nn.Module):
-
-    def __init__(self, coef: float = 0.97):
-        super().__init__()
-        self.coef = coef
-        self.register_buffer(
-            'flipped_filter', torch.FloatTensor([-self.coef, 1.]).unsqueeze(0).unsqueeze(0)
-        )
-
-    def forward(self, input: torch.tensor) -> torch.tensor:
-        input = input.unsqueeze(1)
-        input = F.pad(input, (1, 0), 'reflect')
-        return F.conv1d(input, self.flipped_filter).squeeze(1)
 
 class ECAPA_TDNN(nn.Module):
     def __init__(self, C = 512, nOut = 256, n_mels = 80, log_input = True, **kwargs):

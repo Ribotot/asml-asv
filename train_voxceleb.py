@@ -10,9 +10,10 @@ import zipfile
 import warnings
 import datetime
 from tuneThreshold import *
-from SpeakerNet import *
+from Trainer import *
 from dataloader_voxceleb import *
 from utils import *
+from SpeakerNet import WrappedModel, SpeakerNet
 import torch.distributed as dist
 import torch.multiprocessing as mp
 warnings.simplefilter("ignore")

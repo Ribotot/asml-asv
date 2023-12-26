@@ -10,8 +10,9 @@ import zipfile
 import warnings
 import datetime
 from tuneThreshold import *
-from SpeakerNet import *
 from dataloader_voxceleb import *
+from Inferencer import *
+from SpeakerNet import WrappedModel, SpeakerNet
 warnings.simplefilter("ignore")
 
 ## ===== ===== ===== ===== ===== ===== ===== =====
@@ -53,6 +54,7 @@ parser.add_argument('--nClasses',       type=int,   default=5994,   help='Number
 parser.add_argument('--dcf_p_target',   type=float, default=0.01,   help='A priori probability of the specified target speaker')
 parser.add_argument('--dcf_c_miss',     type=float, default=1,      help='Cost of a missed detection')
 parser.add_argument('--dcf_c_fa',       type=float, default=1,      help='Cost of a spurious detection')
+parser.add_argument('--evaluate_type',  type=str,   default=None,   choices=["save_te", None], help='Initial load_type')
 
 ## Load and save
 parser.add_argument('--epoch',          type=int,   default=-1,     help='Load model weights of epoch')
@@ -114,10 +116,10 @@ def main_worker(gpu, ngpus_per_node, args):
     it = 1
 
     ## Write args to scorefile
-    scorefile   = open(args.result_save_path+"/scores.txt", "a+")
+    scorefile   = open(args.result_save_path+"/results.txt", "a+")
     args.gpu = args.gpu_id
 
-    trainer     = ModelTrainer(s, **vars(args))
+    trainer     = ModelInferencer(s, **vars(args))
 
     ## Load model weights
     modelfiles = glob.glob('%s/model0*.model'%args.model_save_path)
@@ -141,14 +143,22 @@ def main_worker(gpu, ngpus_per_node, args):
     print('Total parameters: {:.4f} M'.format(pytorch_total_params + pytorch_loss_params))
     print('Test list',args.test_list)
     
-    sc, lab, _ = trainer.evaluateFromList(**vars(args))
+    if args.evaluate_type == None:
+        sc, lab, _ = trainer.evaluateFromList(**vars(args))
+    elif args.evaluate_type == "save_te":
+        sc, lab, _ = trainer.evaluateFromList_saveSE(**vars(args))
+    else:
+        raise ValueError('Undefined evaluate type')    
+
 
     result = tuneThresholdfromScore(sc, lab, [1, 0.1])
 
     fnrs, fprs, thresholds = ComputeErrorRates(sc, lab)
     mindcf, threshold = ComputeMinDcf(fnrs, fprs, thresholds, args.dcf_p_target, args.dcf_c_miss, args.dcf_c_fa)
 
-    print('\n',time.strftime("%Y-%m-%d %H:%M:%S"), "VEER {:2.4f}".format(result[1]), "MinDCF {:2.5f}".format(mindcf))
+    print('\n',time.strftime("%Y-%m-%d %H:%M:%S"), "Epoch {:d}".format(args.epoch), \
+        "VEER {:2.4f}".format(result[1]), "MinDCF[{:2.3f}]".format(args.dcf_p_target) ,"{:2.5f}".format(mindcf))
+    scorefile.write("Epoch {:d}, VEER {:2.4f}, MinDCF[{:2.3f}] {:2.5f}\n".format(args.epoch, result[1], args.dcf_p_target, mindcf))
 
 
 ## ===== ===== ===== ===== ===== ===== ===== =====
