@@ -13,3 +13,4 @@
 python infer_voxceleb.py \
 --config ./configs/ECAPATDNN512_AAM.yaml \
 --epoch 75 \
+--evaluate_type easy_sn\

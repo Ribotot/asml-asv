@@ -121,6 +121,114 @@ class ModelInferencer(object):
 
         return (all_scores, all_labels, all_trials)
 
+    ## ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
+    ## Evaluate from list with speaker adaptive score normalize (SASN)
+    ## ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
+
+    def evaluateFromList_easy_SASN(self, test_list, test_path, nDataLoaderThread, distributed, coh_size=100, print_interval=100, **kwargs):
+
+        if distributed:
+            rank = torch.distributed.get_rank()
+        else:
+            rank = 0
+
+        self.__model__.eval()
+
+        lines = []
+        files = []
+        feats = {}
+        means = {}
+        stds  = {}
+        tstart = time.time()
+
+        ## Read all lines
+        with open(test_list) as f:
+            lines = f.readlines()
+
+        ## Get a list of unique file names
+        files = list(itertools.chain(*[x.strip().split()[-2:] for x in lines]))
+        setfiles = list(set(files))
+        setfiles.sort()
+
+        ## Define test data loader
+        test_dataset = test_dataset_loader(setfiles, test_path, **kwargs)
+
+        if distributed:
+            sampler = torch.utils.data.distributed.DistributedSampler(test_dataset, shuffle=False)
+        else:
+            sampler = None
+
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=nDataLoaderThread, drop_last=False, sampler=sampler)
+
+        ## Extract features for every utterance
+        for idx, data in enumerate(test_loader):
+            inp1 = data[0][0].cuda()
+            with torch.no_grad():
+                ref_feat = self.__model__.module.inference(inp1)
+                cosine = F.linear(F.normalize(ref_feat), F.normalize(self.__model__.module.__L__.weight))
+                cohort, _ = torch.topk(cosine, coh_size, dim=-1, largest=True, sorted=True)
+                var, mean = torch.var_mean(cohort, dim=-1, keepdims=True)
+                std = torch.sqrt(var)
+            feats[data[1][0]] = ref_feat.detach().cpu()
+            means[data[1][0]] = mean.detach().cpu()
+            stds[data[1][0]]  = std.detach().cpu()
+
+            telapsed = time.time() - tstart
+
+            if idx % print_interval == 0 and rank == 0:
+                sys.stdout.write(
+                    "\rReading {:d} of {:d}: {:.2f} Hz, embedding size {:d}".format(idx, test_loader.__len__(), idx / telapsed, ref_feat.size()[1])
+                )
+
+        all_scores = []
+        all_labels = []
+        all_trials = []
+
+        if distributed:
+            ## Gather features from all GPUs
+            feats_all = [None for _ in range(0, torch.distributed.get_world_size())]
+            torch.distributed.all_gather_object(feats_all, feats)
+
+        if rank == 0:
+
+            tstart = time.time()
+            print("")
+
+            ## Combine gathered features
+            if distributed:
+                feats = feats_all[0]
+                for feats_batch in feats_all[1:]:
+                    feats.update(feats_batch)
+
+            ## Read files and compute all scores
+            for idx, line in enumerate(lines):
+
+                data = line.split()
+
+                ## Append random label if missing
+                if len(data) == 2:
+                    data = [random.randint(0, 1)] + data
+
+                ref_feat = feats[data[1]].cuda()
+                com_feat = feats[data[2]].cuda()
+
+                if self.__model__.module.__L__.test_normalize:
+                    ref_feat = F.normalize(ref_feat, p=2, dim=1)
+                    com_feat = F.normalize(com_feat, p=2, dim=1)
+
+                score = numpy.mean(torch.matmul(ref_feat, com_feat.T).detach().cpu().numpy()) # Get the score
+                score = 0.5*(score-means[data[1]][0])/stds[data[1]][0] + 0.5*(score-means[data[2]][0])/stds[data[2]][0]
+                all_scores.append(score)
+                all_labels.append(int(data[0]))
+                all_trials.append(data[1] + " " + data[2])
+
+                if idx % print_interval == 0:
+                    telapsed = time.time() - tstart
+                    sys.stdout.write("\rComputing {:d} of {:d}: {:.2f} Hz".format(idx, len(lines), idx / telapsed))
+                    sys.stdout.flush()
+
+        return (all_scores, all_labels, all_trials)
+
     ## ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
     ## Evaluation with speaker embedding saving (only testset)
     ## ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
@@ -136,7 +244,7 @@ class ModelInferencer(object):
             rank = 0
 
         self.__model__.eval()
-
+ 
         lines = []
         files = []
         tstart = time.time()

@@ -54,7 +54,9 @@ parser.add_argument('--nClasses',       type=int,   default=5994,   help='Number
 parser.add_argument('--dcf_p_target',   type=float, default=0.01,   help='A priori probability of the specified target speaker')
 parser.add_argument('--dcf_c_miss',     type=float, default=1,      help='Cost of a missed detection')
 parser.add_argument('--dcf_c_fa',       type=float, default=1,      help='Cost of a spurious detection')
-parser.add_argument('--evaluate_type',  type=str,   default=None,   choices=["save_te", None], help='Initial load_type')
+parser.add_argument('--evaluate_type',  type=str,   default=None,   choices=["save_te", "easy_sn", None], help='Initial load_type')
+parser.add_argument('--coh_size',       type=int,   default=400,    help='Cohorts size for score normalization')
+
 
 ## Load and save
 parser.add_argument('--epoch',          type=int,   default=-1,     help='Load model weights of epoch')
@@ -147,6 +149,8 @@ def main_worker(gpu, ngpus_per_node, args):
         sc, lab, _ = trainer.evaluateFromList(**vars(args))
     elif args.evaluate_type == "save_te":
         sc, lab, _ = trainer.evaluateFromList_saveSE(**vars(args))
+    elif args.evaluate_type == "easy_sn":
+        sc, lab, _ = trainer.evaluateFromList_easy_SASN(**vars(args))
     else:
         raise ValueError('Undefined evaluate type')    
 
