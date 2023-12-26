@@ -1,21 +1,15 @@
 #! /usr/bin/python
 # -*- encoding: utf-8 -*-
 
-<<<<<<< HEAD
-=======
 # revised
 # Copyright 2023 Choi Jeong-Hwan
 
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 import torch
 import torchaudio
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
-<<<<<<< HEAD
-=======
 from models.custom.utils import FbankAug
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
 class MainModel(nn.Module):
     def __init__(self, nOut = 1024, encoder_type='SAP', log_input=True, **kwargs):
@@ -73,35 +67,18 @@ class MainModel(nn.Module):
 
         self.instancenorm   = nn.InstanceNorm1d(40)
         self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min=0.0, f_max=8000, pad=0, n_mels=40)
-<<<<<<< HEAD
-=======
         self.specaug = FbankAug()
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
     def new_parameter(self, *size):
         out = nn.Parameter(torch.FloatTensor(*size))
         nn.init.xavier_normal_(out)
         return out
-<<<<<<< HEAD
-        
-    def forward(self, x):
-
-        with torch.no_grad():
-            with torch.cuda.amp.autocast(enabled=False):
-                x = self.torchfb(x)+1e-6
-                if self.log_input: x = x.log()
-                x = self.instancenorm(x).unsqueeze(1)
-
-        x = self.netcnn(x);
-
-=======
 
     def _before_pooling(self, x):
         x = self.netcnn(x);
         return x
 
     def _before_penultimate(self, x):
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         if self.encoder_type == "MAX" or self.encoder_type == "TAP":
             x = self.encoder(x)
             x = x.view((x.size()[0], -1))
@@ -115,11 +92,6 @@ class MainModel(nn.Module):
             x = torch.sum(x * w, dim=1)
 
         x = self.fc(x);
-<<<<<<< HEAD
-
-        return x;
-
-=======
         return x
 
     def wave2feat(self, x, max_frame=False, aug=False):
@@ -143,4 +115,3 @@ class MainModel(nn.Module):
     def forward(self, x, max_frame=False, aug=False):
         x = self.wave2emb(x, max_frame, aug=False)
         return x
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09

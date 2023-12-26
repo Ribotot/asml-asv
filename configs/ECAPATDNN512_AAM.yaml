@@ -10,4 +10,4 @@ log_input: True
 max_seg_per_spk: 500
 augment_noise: True
 augment_specaug: True
-save_path: exps/ECAPATDNN512_AAM2
+save_path: exps/ECAPATDNN512_AAM

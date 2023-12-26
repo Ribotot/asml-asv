@@ -1,10 +1,7 @@
 #! /usr/bin/python
 # -*- encoding: utf-8 -*-
 
-<<<<<<< HEAD
-=======
 import json
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 import torch
 import torch.nn.functional as F
 
@@ -23,8 +20,6 @@ def accuracy(output, target, topk=(1,)):
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
 
-<<<<<<< HEAD
-=======
 def dict2scp(scp, dicts):
     """write dictionary to scp file"""
     with open(scp, 'w') as file:
@@ -44,7 +39,6 @@ def clip_gradients(model, clip):
                 p.grad.data.mul_(clip_coef)
     return norms
     
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 class PreEmphasis(torch.nn.Module):
 
     def __init__(self, coef: float = 0.97):
@@ -61,8 +55,4 @@ class PreEmphasis(torch.nn.Module):
         # reflect padding to match lengths of in/out
         input = input.unsqueeze(1)
         input = F.pad(input, (1, 0), 'reflect')
-<<<<<<< HEAD
         return F.conv1d(input, self.flipped_filter).squeeze(1)
-=======
-        return F.conv1d(input, self.flipped_filter).squeeze(1)
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09

@@ -9,22 +9,14 @@ import time, pdb, numpy, math
 from utils import accuracy
 
 class LossFunction(nn.Module):
-<<<<<<< HEAD
-    def __init__(self, nOut, nClasses, margin=0.3, scale=15, easy_margin=False, **kwargs):
-=======
     def __init__(self, nOut, nClasses, margin=0.2, scale=30, easy_margin=False, **kwargs):
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         super(LossFunction, self).__init__()
 
         self.test_normalize = True
         
         self.m = margin
         self.s = scale
-<<<<<<< HEAD
-        self.in_feats = nOut
-=======
         self.nOut = nOut
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         self.weight = torch.nn.Parameter(torch.FloatTensor(nClasses, nOut), requires_grad=True)
         self.ce = nn.CrossEntropyLoss()
         nn.init.xavier_normal_(self.weight, gain=1)
@@ -38,19 +30,11 @@ class LossFunction(nn.Module):
         self.mm = math.sin(math.pi - self.m) * self.m
 
         print('Initialised AAMSoftmax margin %.3f scale %.3f'%(self.m,self.s))
-<<<<<<< HEAD
-
-    def forward(self, x, label=None):
-
-        assert x.size()[0] == label.size()[0]
-        assert x.size()[1] == self.in_feats
-=======
         
     def forward(self, x, label=None):
 
         assert x.size()[0] == label.size()[0]
         assert x.size()[1] == self.nOut
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         
         # cos(theta)
         cosine = F.linear(F.normalize(x), F.normalize(self.weight))

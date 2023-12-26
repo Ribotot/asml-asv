@@ -1,23 +1,16 @@
 #! /usr/bin/python
 # -*- encoding: utf-8 -*-
 
-<<<<<<< HEAD
-=======
 # revised
 # Copyright 2023 Choi Jeong-Hwan
 
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 import torch
 import torchaudio
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
-<<<<<<< HEAD
-from clova.models.ResNetBlocks import *
-=======
 from models.clova.ResNetBlocks import *
 from models.custom.utils import FbankAug
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
 class ResNetSE(nn.Module):
     def __init__(self, block, layers, num_filters, nOut, encoder_type='SAP', n_mels=40, log_input=True, **kwargs):
@@ -42,10 +35,7 @@ class ResNetSE(nn.Module):
 
         self.instancenorm   = nn.InstanceNorm1d(n_mels)
         self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, window_fn=torch.hamming_window, n_mels=n_mels)
-<<<<<<< HEAD
-=======
         self.specaug = FbankAug()
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
         if self.encoder_type == "SAP":
             self.sap_linear = nn.Linear(num_filters[3] * block.expansion, num_filters[3] * block.expansion)
@@ -89,18 +79,7 @@ class ResNetSE(nn.Module):
         nn.init.xavier_normal_(out)
         return out
 
-<<<<<<< HEAD
-    def forward(self, x):
-
-        with torch.no_grad():
-            with torch.cuda.amp.autocast(enabled=False):
-                x = self.torchfb(x)+1e-6
-                if self.log_input: x = x.log()
-                x = self.instancenorm(x).unsqueeze(1).detach()
-
-=======
     def _before_pooling(self, x):
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -109,13 +88,9 @@ class ResNetSE(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-<<<<<<< HEAD
-        
-=======
         return x
 
     def _before_penultimate(self, x):
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         x = torch.mean(x, dim=2, keepdim=True)
 
         if self.encoder_type == "SAP":
@@ -135,12 +110,6 @@ class ResNetSE(nn.Module):
 
         x = x.view(x.size()[0], -1)
         x = self.fc(x)
-<<<<<<< HEAD
-
-        return x
-
-
-=======
         return x
 
     def wave2feat(self, x, max_frame=False, aug=False):
@@ -164,7 +133,6 @@ class ResNetSE(nn.Module):
         x = self.wave2emb(x, max_frame, aug=False)
         return x
 
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 def MainModel(nOut=256, **kwargs):
     # Number of filters
     num_filters = [16, 32, 64, 128]

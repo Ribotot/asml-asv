@@ -24,10 +24,7 @@ parser.add_argument('--config',         type=str,   default=None,   help='Config
 
 ## Data loader
 parser.add_argument('--max_frames',     type=int,   default=200,    help='Input length to the network for training')
-<<<<<<< HEAD
-=======
 parser.add_argument('--eval_frames',    type=str,   default=None,   help='Input length to the network for testing None uses the whole files')
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 parser.add_argument('--batch_size',     type=int,   default=200,    help='Batch size, number of speakers per batch')
 parser.add_argument('--max_seg_per_spk', type=int,  default=500,    help='Maximum number of utterances per speaker per epoch')
 parser.add_argument('--nDataLoaderThread', type=int, default=5,     help='Number of loader threads')
@@ -47,13 +44,7 @@ parser.add_argument("--lr_decay",       type=float, default=0.95,   help='Learni
 parser.add_argument('--weight_decay',   type=float, default=0,      help='Weight decay in the optimizer')
 
 ## Loss functions
-<<<<<<< HEAD
-parser.add_argument("--hard_prob",      type=float, default=0.5,    help='Hard negative mining probability, otherwise random, only for some loss functions')
-parser.add_argument("--hard_rank",      type=int,   default=10,     help='Hard negative mining rank in the batch, only for some loss functions')
-parser.add_argument('--margin',         type=float, default=0.1,    help='Loss margin, only for some loss functions')
-=======
 parser.add_argument('--margin',         type=float, default=0.2,    help='Loss margin, only for some loss functions')
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 parser.add_argument('--scale',          type=float, default=30,     help='Loss scale, only for some loss functions')
 parser.add_argument('--nPerSpeaker',    type=int,   default=1,      help='Number of utterances per speaker per batch, only for metric learning based losses')
 parser.add_argument('--nClasses',       type=int,   default=5994,   help='Number of speakers in the softmax layer, only for softmax-based losses')
@@ -64,15 +55,6 @@ parser.add_argument('--dcf_c_miss',     type=float, default=1,      help='Cost o
 parser.add_argument('--dcf_c_fa',       type=float, default=1,      help='Cost of a spurious detection')
 
 ## Load and save
-<<<<<<< HEAD
-parser.add_argument('--initial_model',  type=str,   default="",     help='Initial model weights')
-parser.add_argument('--save_path',      type=str,   default="exps/exp1", help='Path for model and logs')
-
-## For test only
-## Test data
-parser.add_argument('--test_list',      type=str,   default="data/test_list.txt",   help='Evaluation list')
-parser.add_argument('--test_path',      type=str,   default="data/voxceleb1", help='Absolute path to the test set')
-=======
 parser.add_argument('--epoch',          type=int,   default=-1,     help='Load model weights of epoch')
 parser.add_argument('--save_path',      type=str,   default="exps/exp1", help='Path for model and logs')
 
@@ -83,7 +65,6 @@ parser.add_argument('--save_path',      type=str,   default="exps/exp1", help='P
 parser.add_argument('--test_list',          type=str,   default="/home/jh2/Workspace/cjh/fire/sess_torch/meta_vc1/veri_test_clean.txt",     help='Evaluation list');
 parser.add_argument('--test_path',          type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/VoxCeleb1/test/wav/", help='Absolute path to the test set');
 
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
 ## Model definition
 parser.add_argument('--n_mels',         type=int,   default=40,     help='Number of mel filterbanks')
@@ -91,9 +72,6 @@ parser.add_argument('--log_input',      type=bool,  default=False,  help='Log in
 parser.add_argument('--model',          type=str,   default="",     help='Name of model definition')
 parser.add_argument('--encoder_type',   type=str,   default="SAP",  help='Type of encoder')
 parser.add_argument('--nOut',           type=int,   default=512,    help='Embedding size in the last FC layer')
-<<<<<<< HEAD
-parser.add_argument('--sinc_stride',    type=int,   default=10,    help='Stride size of the first analytic filterbank layer of RawNet3')
-=======
 parser.add_argument('--sinc_stride',    type=int,   default=10,     help='Stride size of the first analytic filterbank layer of RawNet3')
 parser.add_argument('--gpu_id',         type=str,   default="0",    help='GPU')
 
@@ -102,7 +80,6 @@ parser.add_argument('--gpu_id',         type=str,   default="0",    help='GPU')
 parser.add_argument('--port',           type=str,   default="8888", help='Port for distributed training, input as text')
 parser.add_argument('--distributed',    dest='distributed', action='store_true', help='Enable distributed training')
 parser.add_argument('--mixedprec',      dest='mixedprec',   action='store_true', help='Enable mixed precision training')
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
 args = parser.parse_args()
 
@@ -128,31 +105,17 @@ if args.config is not None:
 ## Trainer script
 ## ===== ===== ===== ===== ===== ===== ===== =====
 
-<<<<<<< HEAD
-def main_worker(gpu, ngpus_per_node, args):
-
-
-    ## Load models
-    s = SpeakerNet(**vars(args))
-
-    s = WrappedModel(s).cuda(gpu)
-
-=======
 def main_worker(gpu, ngpus_per_node, args):   
     ## Load models
     s = SpeakerNet(**vars(args))
 
     s = WrappedModel(s).cuda()
     
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
     it = 1
 
     ## Write args to scorefile
     scorefile   = open(args.result_save_path+"/scores.txt", "a+")
-<<<<<<< HEAD
-=======
     args.gpu = args.gpu_id
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
     trainer     = ModelTrainer(s, **vars(args))
 
@@ -160,15 +123,9 @@ def main_worker(gpu, ngpus_per_node, args):
     modelfiles = glob.glob('%s/model0*.model'%args.model_save_path)
     modelfiles.sort()
 
-<<<<<<< HEAD
-    if(args.initial_model != ""):
-        trainer.loadParameters(args.initial_model)
-        print("Model {} loaded!".format(args.initial_model))
-=======
     if(args.epoch != -1):
         trainer.loadParameters(modelfiles[args.epoch-1])
         print("Model epoch {} loaded!".format(args.epoch))
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
     elif len(modelfiles) >= 1:
         trainer.loadParameters(modelfiles[-1])
         print("Model {} loaded from previous state!".format(modelfiles[-1]))
@@ -176,18 +133,12 @@ def main_worker(gpu, ngpus_per_node, args):
 
     ## Evaluation code - must run on single GPU
 
-<<<<<<< HEAD
-    pytorch_total_params = sum(p.numel() for p in s.module.__S__.parameters())
-
-    print('Total parameters: ',pytorch_total_params)
-=======
     pytorch_total_params = sum(p.numel() for p in s.module.__S__.parameters())/ 1000 / 1000
     pytorch_loss_params = sum(p.numel() for p in s.module.__L__.parameters())/ 1000 / 1000
 
     print('Model parameters: {:.4f} M'.format(pytorch_total_params))
     print('Loss part parameters: {:.4f} M'.format(pytorch_loss_params))
     print('Total parameters: {:.4f} M'.format(pytorch_total_params + pytorch_loss_params))
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
     print('Test list',args.test_list)
     
     sc, lab, _ = trainer.evaluateFromList(**vars(args))
@@ -213,23 +164,14 @@ def main():
     os.makedirs(args.model_save_path, exist_ok=True)
     os.makedirs(args.result_save_path, exist_ok=True)
 
-<<<<<<< HEAD
-=======
     os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu_id
 
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
     print('Python Version:', sys.version)
     print('PyTorch Version:', torch.__version__)
     print('Number of GPUs:', torch.cuda.device_count())
     print('Save path:',args.save_path)
 
-<<<<<<< HEAD
-    gpu = args.gpu
-
-    main_worker(gpu, None, args)
-=======
     main_worker(0, None, args)
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
 
 if __name__ == '__main__':
