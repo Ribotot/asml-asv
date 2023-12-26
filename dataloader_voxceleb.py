@@ -23,16 +23,21 @@ def worker_init_fn(worker_id):
     numpy.random.seed(numpy.random.get_state()[1][0] + worker_id)
 
 
+<<<<<<< HEAD
 def loadWAV(filename, max_frames):
 
     # Maximum audio length
     max_audio = max_frames * 160 + 240
 
+=======
+def loadWAV(filename, max_frames=None):
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
     # Read wav file and convert to torch tensor
     audio, sample_rate = soundfile.read(filename)
 
     audiosize = audio.shape[0]
 
+<<<<<<< HEAD
     if audiosize <= max_audio:
         shortage    = max_audio - audiosize + 1 
         audio       = numpy.pad(audio, (0, shortage), 'wrap')
@@ -44,6 +49,26 @@ def loadWAV(filename, max_frames):
     if max_frames == 0:
         feats.append(audio)
     else:
+=======
+    # Maximum audio length
+    if max_frames == None:
+        max_audio = audiosize
+
+        feats = []
+        feats.append(audio)
+
+    else:
+        max_audio = int(max_frames) * 160 + 240
+
+        if audiosize <= max_audio:
+            shortage    = max_audio - audiosize + 1 
+            audio       = numpy.pad(audio, (0, shortage), 'wrap')
+            audiosize   = audio.shape[0]
+
+        startframe = numpy.array([numpy.int64(random.random()*(audiosize-max_audio))])
+        
+        feats = []
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         for asf in startframe:
             feats.append(audio[int(asf):int(asf)+max_audio])
 
@@ -103,7 +128,11 @@ class AugmentWAV(object):
 
 
 class train_dataset_loader(Dataset):
+<<<<<<< HEAD
     def __init__(self, train_list, augment, musan_path, rir_path, max_frames, train_path, **kwargs):
+=======
+    def __init__(self, train_list, augment_noise, musan_path, rir_path, max_frames, train_path, **kwargs):
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
         self.augment_wav = AugmentWAV(musan_path=musan_path, rir_path=rir_path, max_frames = max_frames)
 
@@ -111,14 +140,26 @@ class train_dataset_loader(Dataset):
         self.max_frames = max_frames;
         self.musan_path = musan_path
         self.rir_path   = rir_path
+<<<<<<< HEAD
         self.augment    = augment
+=======
+        self.augment_noise    = augment_noise
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         
         # Read training files
         with open(train_list) as dataset_file:
             lines = dataset_file.readlines();
 
         # Make a dictionary of ID names and ID indices
+<<<<<<< HEAD
         dictkeys = list(set([x.split()[0] for x in lines]))
+=======
+        ## Please note that, if you extract utterances based on kaldi (scp file), you will get spk-video-utt. This code is used for kaldi-based scp file. ##
+        dictkeys = list(set([x.split()[0].split('-')[0] for x in lines]))
+        ## Please use the folloing code. ##
+        # dictkeys = list(set([x.split()[0] for x in lines]))
+
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         dictkeys.sort()
         dictkeys = { key : ii for ii, key in enumerate(dictkeys) }
 
@@ -129,7 +170,15 @@ class train_dataset_loader(Dataset):
         for lidx, line in enumerate(lines):
             data = line.strip().split();
 
+<<<<<<< HEAD
             speaker_label = dictkeys[data[0]];
+=======
+            ## Please note that, if you extract utterances based on kaldi (scp file), you will get spk-video-utt. This code is used for kaldi-based scp file. ##
+            speaker_label = dictkeys[data[0].split('-')[0]];
+            ## Please use the folloing code. ##
+            # speaker_label = dictkeys[data[0]];
+
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
             filename = os.path.join(train_path,data[1]);
             
             self.data_label.append(speaker_label)
@@ -138,12 +187,25 @@ class train_dataset_loader(Dataset):
     def __getitem__(self, indices):
 
         feat = []
+<<<<<<< HEAD
 
         for index in indices:
             
             audio = loadWAV(self.data_list[index], self.max_frames)
             
             if self.augment:
+=======
+        #z#
+
+        for index in indices:
+            audio = loadWAV(self.data_list[index], self.max_frames)
+            
+            if self.augment_noise:
+                RIR_augtype = random.random()    
+                if RIR_augtype > 0.5:
+                    audio   = self.augment_wav.reverberate(audio)
+
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
                 Noise_augtype = random.random()
                 if Noise_augtype > 0.85:
                     audio   = self.augment_wav.additive_noise('music',audio)
@@ -152,9 +214,12 @@ class train_dataset_loader(Dataset):
                 elif Noise_augtype > 0.5:
                     audio   = self.augment_wav.additive_noise('noise',audio)
                 
+<<<<<<< HEAD
                 RIR_augtype = random.random()    
                 if RIR_augtype > 0.5:
                     audio   = self.augment_wav.reverberate(audio)
+=======
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
             feat.append(audio);
 
@@ -162,19 +227,32 @@ class train_dataset_loader(Dataset):
 
         return torch.FloatTensor(feat), self.data_label[index]
 
+<<<<<<< HEAD
     def __len__(self):
+=======
+    def __len__(self) -> int:
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         return len(self.data_list)
 
 
 
 class test_dataset_loader(Dataset):
+<<<<<<< HEAD
     def __init__(self, test_list, test_path, max_frames, num_eval, **kwargs):
         self.max_frames = max_frames;
+=======
+    def __init__(self, test_list, test_path, eval_frames=None, **kwargs):
+        self.eval_frames = eval_frames;
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         self.test_path  = test_path
         self.test_list  = test_list
 
     def __getitem__(self, index):
+<<<<<<< HEAD
         audio = loadWAV(os.path.join(self.test_path,self.test_list[index]), self.max_frames)
+=======
+        audio = loadWAV(os.path.join(self.test_path,self.test_list[index]), self.eval_frames)
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         return torch.FloatTensor(audio), self.test_list[index]
 
     def __len__(self):
@@ -220,6 +298,10 @@ class train_dataset_sampler(torch.utils.data.Sampler):
         for findex, key in enumerate(dictkeys):
             data    = data_dict[key]
             numSeg  = round_down(min(len(data),self.max_seg_per_spk),self.nPerSpeaker)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
             
             rp      = lol(numpy.arange(numSeg),self.nPerSpeaker)
             flattened_label.extend([findex] * (len(rp)))

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # VoxCeleb trainer
 
 This repository contains the framework for training speaker recognition models described in the paper '_In defence of metric learning for speaker recognition_' and '_Pushing the limits of raw waveform speaker recognition_'.
@@ -7,7 +6,7 @@ This repository contains the framework for training speaker recognition models d
 ```
 pip install -r requirements.txt
 ```
-
+We additionally use [fvcore](https://github.com/facebookresearch/fvcore) to calculate FLOPs.
 ### Data preparation
 
 The following script can be used to download and prepare the VoxCeleb dataset for training.
@@ -195,27 +194,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-=======
-# ASML ASV
-
-This repository contains the automatic speaker verification (ASV) training/inference code from the Acoustic, Speech Signal Processing, and Machine Learning (ASML) Lab. of Hanyang University.
-
-Our work is based on VoxCeleb trainer from NAVER corpus, please refer to [LICENSE_clovaai.md](/LICENSE_clovaai.md) for details.
-
-Code for other datasets other than VoxCeleb will be added. 
-
-### model & loss
-
-model and loss are organized into three folders: asml/clova/custom.
-
-* The "asml" is our own work and the "clova" is the same as the those in the VoxCeleb trainer.
-
-* "custom" contains what we are developing based on other researchers' work. 
-
-
-### License
-```
-Copyright (c) 2023-present ASML Lab. of Hanyang University,
-All rights reserved.
->>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 ```

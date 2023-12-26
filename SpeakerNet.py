@@ -4,11 +4,21 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+<<<<<<< HEAD
 import numpy, sys, random
 import time, itertools, importlib
 
 from DatasetLoader import test_dataset_loader
 from torch.cuda.amp import autocast, GradScaler
+=======
+import numpy, sys, random, math
+import time, itertools, importlib
+
+from dataloader_voxceleb import test_dataset_loader
+from torch.cuda.amp import autocast, GradScaler
+# from utils import save_on_master, clip_gradients
+from utils import save_on_master
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
 
 class WrappedModel(nn.Module):
@@ -24,7 +34,11 @@ class WrappedModel(nn.Module):
 
 
 class SpeakerNet(nn.Module):
+<<<<<<< HEAD
     def __init__(self, model, optimizer, trainfunc, nPerSpeaker, **kwargs):
+=======
+    def __init__(self, model, optimizer, trainfunc, nPerSpeaker, augment_specaug=False, **kwargs):
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         super(SpeakerNet, self).__init__()
 
         SpeakerNetModel = importlib.import_module("models." + model).__getattribute__("MainModel")
@@ -34,11 +48,20 @@ class SpeakerNet(nn.Module):
         self.__L__ = LossFunction(**kwargs)
 
         self.nPerSpeaker = nPerSpeaker
+<<<<<<< HEAD
+=======
+        self.augment_specaug = augment_specaug
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
     def forward(self, data, label=None):
 
         data = data.reshape(-1, data.size()[-1]).cuda()
+<<<<<<< HEAD
         outp = self.__S__.forward(data)
+=======
+        
+        outp = self.__S__.forward(data, aug=self.augment_specaug)
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
         if label == None:
             return outp
@@ -51,6 +74,7 @@ class SpeakerNet(nn.Module):
 
             return nloss, prec1
 
+<<<<<<< HEAD
 
 class ModelTrainer(object):
     def __init__(self, speaker_model, optimizer, scheduler, gpu, mixedprec, **kwargs):
@@ -59,6 +83,20 @@ class ModelTrainer(object):
 
         print("Model para number = %.2f"%(sum(param.numel() for param in self.__model__.__S__.parameters()) / 1024 / 1024))
 
+=======
+    def inference(self, data):
+
+        data = data.reshape(-1, data.size()[-1]).cuda()
+        outp = self.__S__.forward(data)
+        
+        return outp
+
+class ModelTrainer(object):
+    def __init__(self, speaker_model, optimizer, scheduler, gpu, mixedprec, clip_grad=3.0, **kwargs):
+
+        self.__model__ = speaker_model
+
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         Optimizer = importlib.import_module("optimizer." + optimizer).__getattribute__("Optimizer")
         self.__optimizer__ = Optimizer(self.__model__.parameters(), **kwargs)
 
@@ -69,6 +107,11 @@ class ModelTrainer(object):
 
         self.gpu = gpu
 
+<<<<<<< HEAD
+=======
+        self.clip_grad = clip_grad
+
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         self.mixedprec = mixedprec
 
         assert self.lr_step in ["epoch", "iteration"]
@@ -101,12 +144,32 @@ class ModelTrainer(object):
 
             if self.mixedprec:
                 with autocast():
+<<<<<<< HEAD
                     nloss, prec1 = self.__model__(data, label)
                 self.scaler.scale(nloss).backward()
+=======
+                    nloss, prec1 = self.__model__(data, label)                
+                    if not math.isfinite(nloss.item()):
+                        print("Loss is {}, stopping training".format(nloss.item()), force=True)
+                        sys.exit(1)
+                self.scaler.scale(nloss).backward()
+                if self.clip_grad:
+                    # param_norms = clip_gradients(self.__model__, self.clip_grad)
+                    nn.utils.clip_grad_norm_(self.__model__.parameters(), max_norm=self.clip_grad)
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
                 self.scaler.step(self.__optimizer__)
                 self.scaler.update()
             else:
                 nloss, prec1 = self.__model__(data, label)
+<<<<<<< HEAD
+=======
+                if not math.isfinite(nloss.item()):
+                    print("Loss is {}, stopping training".format(nloss.item()), force=True)
+                    sys.exit(1)
+                if self.clip_grad:
+                    # param_norms = clip_gradients(self.__model__, self.clip_grad)
+                    nn.utils.clip_grad_norm_(self.__model__.parameters(), max_norm=self.clip_grad)
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
                 nloss.backward()
                 self.__optimizer__.step()
 
@@ -168,11 +231,19 @@ class ModelTrainer(object):
 
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False, num_workers=nDataLoaderThread, drop_last=False, sampler=sampler)
 
+<<<<<<< HEAD
         ## Extract features for every image
         for idx, data in enumerate(test_loader):
             inp1 = data[0][0].cuda()
             with torch.no_grad():
                 ref_feat = self.__model__(inp1).detach().cpu()
+=======
+        ## Extract features for every utterance
+        for idx, data in enumerate(test_loader):
+            inp1 = data[0][0].cuda()
+            with torch.no_grad():
+                ref_feat = self.__model__.module.inference(inp1).detach().cpu()
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
             feats[data[1][0]] = ref_feat
             telapsed = time.time() - tstart
 
@@ -218,7 +289,10 @@ class ModelTrainer(object):
                     com_feat = F.normalize(com_feat, p=2, dim=1)
 
                 score = numpy.mean(torch.matmul(ref_feat, com_feat.T).detach().cpu().numpy()) # Get the score
+<<<<<<< HEAD
 
+=======
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
                 all_scores.append(score)
                 all_labels.append(int(data[0]))
                 all_trials.append(data[1] + " " + data[2])
@@ -230,22 +304,51 @@ class ModelTrainer(object):
 
         return (all_scores, all_labels, all_trials)
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Save parameters
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
     def saveParameters(self, path):
+<<<<<<< HEAD
 
         torch.save(self.__model__.module.state_dict(), path)
+=======
+        save_dict = {
+            'network': self.__model__.module.state_dict(),
+            'optimizer': self.__optimizer__.state_dict(),
+            'scheduler': self.__scheduler__.state_dict(),
+        }
+        save_on_master(save_dict, path)
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Load parameters
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
     def loadParameters(self, path):
+<<<<<<< HEAD
 
         self_state = self.__model__.module.state_dict()
         loaded_state = torch.load(path, map_location="cuda:%d" % self.gpu)
+=======
+        self_state = self.__model__.module.state_dict()
+        checkpoint = torch.load(path, map_location="cpu")
+        print("Ckpt file %s loaded!"%(path))
+
+        if 'network' not in checkpoint.keys():
+            loaded_state = checkpoint
+        else:
+            self.__optimizer__.load_state_dict(checkpoint['optimizer'])
+            print("Optimizer loaded!")
+            self.__scheduler__.load_state_dict(checkpoint['scheduler'])
+            print("Scheduler loaded!")
+            loaded_state = checkpoint['network']
+
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         if len(loaded_state.keys()) == 1 and "model" in loaded_state:
             loaded_state = loaded_state["model"]
             newdict = {}
@@ -257,6 +360,10 @@ class ModelTrainer(object):
             loaded_state.update(newdict)
             for name in delete_list:
                 del loaded_state[name]
+<<<<<<< HEAD
+=======
+
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         for name, param in loaded_state.items():
             origname = name
             if name not in self_state:
@@ -271,3 +378,8 @@ class ModelTrainer(object):
                 continue
 
             self_state[name].copy_(param)
+<<<<<<< HEAD
+=======
+
+        print("Model loaded!")
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09

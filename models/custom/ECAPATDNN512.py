@@ -10,6 +10,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchaudio
+<<<<<<< HEAD
+=======
+from models.custom.utils import FbankAug
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
 class SEModule(nn.Module):
     def __init__(self, channels, bottleneck=128):
@@ -18,7 +22,11 @@ class SEModule(nn.Module):
             nn.AdaptiveAvgPool1d(1),
             nn.Conv1d(channels, bottleneck, kernel_size=1, padding=0),
             nn.ReLU(),
+<<<<<<< HEAD
             nn.BatchNorm1d(bottleneck),
+=======
+            # nn.BatchNorm1d(bottleneck), # [TaoRuijie] remove this layer 
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
             nn.Conv1d(bottleneck, channels, kernel_size=1, padding=0),
             nn.Sigmoid(),
             )
@@ -90,9 +98,24 @@ class PreEmphasis(torch.nn.Module):
         input = F.pad(input, (1, 0), 'reflect')
         return F.conv1d(input, self.flipped_filter).squeeze(1)
 
+<<<<<<< HEAD
 class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my experiences, C=1024 slightly improves the performance but need more training time.
     def __init__(self, C = 512, nOut = 256, n_mels = 80, **kwargs):
         super(ECAPA_TDNN, self).__init__()
+=======
+class ECAPA_TDNN(nn.Module):
+    def __init__(self, C = 512, nOut = 256, n_mels = 80, log_input = True, **kwargs):
+        super(ECAPA_TDNN, self).__init__()
+
+        self.torchfbank = torch.nn.Sequential(
+            PreEmphasis(),            
+            torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, \
+                                                 f_min = 20, f_max = 7600, window_fn=torch.hamming_window, n_mels=80),
+            )
+        self.specaug = FbankAug() # Spec augmentation
+
+        self.log_input = log_input
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         self.conv1  = nn.Conv1d(n_mels, C, kernel_size=5, stride=1, padding=2)
         self.relu   = nn.ReLU()
         self.bn1    = nn.BatchNorm1d(C)
@@ -100,10 +123,14 @@ class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my expe
         self.layer2 = Bottle2neck(C, C, kernel_size=3, dilation=3, scale=8)
         self.layer3 = Bottle2neck(C, C, kernel_size=3, dilation=4, scale=8)
         self.layer4 = nn.Conv1d(3*C, 1536, kernel_size=1)
+<<<<<<< HEAD
         self.torchfbank = torch.nn.Sequential(
             PreEmphasis(),
             torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min = 20, f_max = 7600, window_fn=torch.hamming_window, n_mels=n_mels),
             )
+=======
+
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         self.attention = nn.Sequential(
             nn.Conv1d(4608, 256, kernel_size=1),
             nn.ReLU(),
@@ -116,7 +143,10 @@ class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my expe
         self.fc6 = nn.Linear(3072, nOut)
         self.bn6 = nn.BatchNorm1d(nOut)
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
     def _before_pooling(self, x):
         x = self.conv1(x)
         x = self.relu(x)
@@ -140,7 +170,11 @@ class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my expe
         x = self.bn6(x)
         return x
 
+<<<<<<< HEAD
     def wave2feat(self, x, max_frame=False):
+=======
+    def wave2feat(self, x, max_frame=False, aug=False):
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         with torch.no_grad():
             with torch.cuda.amp.autocast(enabled=False):
                 if max_frame:
@@ -151,6 +185,7 @@ class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my expe
                         shortage    = math.floor( ( max_audio - audiosize + 1 ) / 2 )
                         x = F.pad(x, (shortage,shortage), "constant", 0)          
                 x = self.torchfbank(x)+1e-6
+<<<<<<< HEAD
                 x = x.log()
                 x = x - torch.mean(x, dim=-1, keepdim=True)
                 x = x[:,:,1:-1]
@@ -159,15 +194,40 @@ class ECAPA_TDNN(nn.Module): # Here we use a small ECAPA-TDNN, C=512. In my expe
 
     def wave2emb(self, wave, max_frame=False):
         feat = self.wave2feat(wave, max_frame)
+=======
+                if self.log_input: x = x.log()
+                x = x - torch.mean(x, dim=-1, keepdim=True)
+                x = x[:,:,1:-1]
+                if aug == True: x = self.specaug(x)
+                x = x.detach()
+        return x
+
+    def wave2emb(self, wave, max_frame=False, aug=False):
+        feat = self.wave2feat(wave, max_frame, aug=False)
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         late_feat = self._before_pooling(feat)
         emb = self._before_penultimate(late_feat)
         return emb
 
 
+<<<<<<< HEAD
     def forward(self, x, max_frame=False):
         x = self.wave2emb(x, max_frame)
         return x
 
+=======
+    def forward(self, x, max_frame=False, aug=False):
+        x = self.wave2emb(x, max_frame, aug=False)
+        return x
+
+
+def MainModel(**kwargs):
+    # Number of filters
+    model = ECAPA_TDNN(**kwargs)
+    return model
+
+
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 if __name__=="__main__":
     # batch_size, num_frames, feat_dim = 1, 3000, 80
     batch_size, second = 1, 4

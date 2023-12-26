@@ -1,13 +1,25 @@
 #! /usr/bin/python
 # -*- encoding: utf-8 -*-
 
+<<<<<<< HEAD
+=======
+# revised
+# Copyright 2023 Choi Jeong-Hwan
+
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 import torch
 import torchaudio
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
+<<<<<<< HEAD
 from clova.models.ResNetBlocks import *
 from utils import PreEmphasis
+=======
+from models.clova.ResNetBlocks import *
+from utils import PreEmphasis
+from models.custom.utils import FbankAug
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
 class ResNetSE(nn.Module):
     def __init__(self, block, layers, num_filters, nOut, encoder_type='SAP', n_mels=40, log_input=True, **kwargs):
@@ -35,6 +47,10 @@ class ResNetSE(nn.Module):
                 PreEmphasis(),
                 torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, window_fn=torch.hamming_window, n_mels=n_mels)
                 )
+<<<<<<< HEAD
+=======
+        self.specaug = FbankAug()
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 
         outmap_size = int(self.n_mels/8)
 
@@ -84,6 +100,7 @@ class ResNetSE(nn.Module):
         nn.init.xavier_normal_(out)
         return out
 
+<<<<<<< HEAD
     def forward(self, x):
 
         with torch.no_grad():
@@ -92,6 +109,10 @@ class ResNetSE(nn.Module):
                 if self.log_input: x = x.log()
                 x = self.instancenorm(x).unsqueeze(1)
 
+=======
+
+    def _before_pooling(self, x):
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         x = self.conv1(x)
         x = self.relu(x)
         x = self.bn1(x)
@@ -100,7 +121,13 @@ class ResNetSE(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+<<<<<<< HEAD
 
+=======
+        return x
+
+    def _before_penultimate(self, x):
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
         x = x.reshape(x.size()[0],-1,x.size()[-1])
 
         w = self.attention(x)
@@ -114,10 +141,37 @@ class ResNetSE(nn.Module):
 
         x = x.view(x.size()[0], -1)
         x = self.fc(x)
+<<<<<<< HEAD
 
         return x
 
 
+=======
+        return x
+
+    def wave2feat(self, x, max_frame=False, aug=False):
+        with torch.no_grad():
+            with torch.cuda.amp.autocast(enabled=False):
+                x = self.torchfb(x)+1e-6
+                if self.log_input: x = x.log()
+                x = self.instancenorm(x).unsqueeze(1)
+                if aug == True: x = self.specaug(x)
+                x = x.detach()
+        return x
+
+
+    def wave2emb(self, wave, max_frame=False, aug=False):
+        feat = self.wave2feat(wave, max_frame, aug=False)
+        late_feat = self._before_pooling(feat)
+        emb = self._before_penultimate(late_feat)
+        return emb
+
+
+    def forward(self, x, max_frame=False, aug=False):
+        x = self.wave2emb(x, max_frame, aug=False)
+        return x
+
+>>>>>>> 463ada6aeb053540ce2428831b625449a57c7a09
 def MainModel(nOut=256, **kwargs):
     # Number of filters
     num_filters = [32, 64, 128, 256]
