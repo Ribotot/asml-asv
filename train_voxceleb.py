@@ -170,7 +170,7 @@ def main_worker(gpu, ngpus_per_node, args):
     )
 
     # iter(train_sampler)
-    args.epoch_per_sample = len(train_dataset)//nPerSpeaker # if we use "len(train_sampler)", it might be cause minor error for scheduler
+    args.epoch_per_sample = len(train_dataset)//args.nPerSpeaker # if we use "len(train_sampler)", it might be cause minor error for scheduler
     
     trainer     = ModelTrainer(s, **vars(args))
 
