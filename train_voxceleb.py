@@ -168,9 +168,13 @@ def main_worker(gpu, ngpus_per_node, args):
         worker_init_fn=worker_init_fn,
         drop_last=True,
     )
-
-    # iter(train_sampler)
-    args.epoch_per_sample = len(train_dataset)//args.nPerSpeaker # if we use "len(train_sampler)", it might be cause minor error for scheduler
+    
+    if args.scheduler == 'onecyclelr':
+        epoch_per_sample = []
+        for _ in range(10):
+            iter(train_sampler)
+            epoch_per_sample.append(len(train_sampler))
+        args.epoch_per_sample = max(epoch_per_sample)
     
     trainer     = ModelTrainer(s, **vars(args))
 

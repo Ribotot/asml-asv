@@ -19,8 +19,9 @@ class LossFunction(nn.Module):
         self.m = margin
         self.s = scale
         self.nOut = nOut
+        self.nClasses = nClasses
         self.weight = torch.nn.Parameter(torch.FloatTensor(nClasses, nOut), requires_grad=True)
-        self.ce = nn.CrossEntropyLoss()
+        self.ce1 = nn.CrossEntropyLoss()
         nn.init.xavier_normal_(self.weight, gain=1)
 
         self.easy_margin = easy_margin
@@ -43,7 +44,7 @@ class LossFunction(nn.Module):
         self.w3 = nn.Parameter(torch.tensor(-2.8))
         self.b2 = nn.Parameter(torch.tensor(0.0))
         self.b3 = nn.Parameter(torch.tensor(2.8))
-        self.criterion  = torch.nn.CrossEntropyLoss()
+        self.ce2 = nn.CrossEntropyLoss()
 
         print('Initialised SN_AngleProto')
 
@@ -53,10 +54,9 @@ class LossFunction(nn.Module):
 
     def forward(self, x, label=None):
         
-        x = torch.reshape(x, (int(x.size()[0]*self.nPerSpeaker), x.size()[-1]))
-        
+        batchsize = x.size()[0]
+        x = x.reshape(-1,x.size()[-1])  
         label = label.repeat_interleave(2)
-        # label = label.repeat(2)
 
         assert x.size()[0] == label.size()[0]
         assert x.size()[1] == self.nOut
@@ -78,44 +78,38 @@ class LossFunction(nn.Module):
         output = (one_hot * phi) + ((1.0 - one_hot) * cosine)
         output = output * self.s
 
-        loss    = self.ce(output, label)
+        nlossS    = self.ce(output, label)
         prec1   = accuracy(output.detach(), label.detach(), topk=(1,))[0]
 
         ## Do s_norm angproto
-        x_reshape = torch.reshape(x, (int(x.size()[0]/self.nPerSpeaker), self.nPerSpeaker, x.size()[-1]))
-        cosine_reshape = torch.reshape(cosine, (int(cosine.size()[0]/self.nPerSpeaker), self.nPerSpeaker, cosine.size()[-1]))
-        label_reshape = torch.reshape(label, (int(label.size()[0]/self.nPerSpeaker), self.nPerSpeaker))
+        x_reshape = x.reshape(batchsize, self.nPerSpeaker, self.nOut)
+        cosine_reshape = cosine.clone().detach().reshape(batchsize, self.nPerSpeaker, self.nClasses)
+        label_reshape = label.reshape(batchsize, self.nPerSpeaker)
 
-        angproto_loss1 = self.s_norm_angproto(x_reshape, cosine_reshape, label_reshape)
-        angproto_loss2 = self.s_norm_angproto(torch.flip(x_reshape, [1]), torch.flip(cosine_reshape, [1]), torch.flip(label_reshape, [1]))
-        angproto_loss = 0.5*(angproto_loss1 + angproto_loss2)
+        nlossP1 = self.s_norm_angproto(x_reshape, cosine_reshape, label_reshape)
+        nlossP2 = self.s_norm_angproto(torch.flip(x_reshape, [1]), torch.flip(cosine_reshape, [1]), torch.flip(label_reshape, [1]))
+        nlossP = 0.5*(nlossP1 + nlossP2)
 
-        loss += angproto_loss
+        return nlossS+nlossP, prec1
 
-        return loss, prec1
-
-    def extract_cosine(self, x):
-        # cos(theta)
+    def extract_mean_std(self, x):
         cosine = F.linear(F.normalize(x), F.normalize(self.weight))
-
-        return cosine
+        cohort1, _ = torch.topk(cosine_anchor, self.cohort_size, dim=-1, largest=True, sorted=True)
+        var1, mean1 = torch.var_mean(cohort1, dim=-1, keepdims=True)
+        std1 = torch.sqrt(var1)
+        return mean1, std1
 
     def s_norm_angproto(self, x, cosine, label=None):
 
-        cosine = cosine.clone().detach()
-
         out_anchor      = torch.mean(x[:,1:,:],1)
-        out_anchor      = F.normalize(out_anchor)
         out_positive    = x[:,0,:]
-        out_positive    = F.normalize(out_positive)
+        batchsize       = out_anchor.size()[0]
 
         cosine_anchor   = torch.mean(cosine[:,1:,:],1)
         cosine_positive = cosine[:,0,:]
 
-        batchsize       = out_anchor.size()[0]
-
         out_dot  = F.cosine_similarity(out_positive.unsqueeze(-1),out_anchor.unsqueeze(-1).transpose(0,2))
-        
+
         cohort1, index1 = torch.topk(cosine_anchor.transpose(0,1), self.cohort_size, dim=0, largest=True, sorted=True)
         cohort2, index2 = torch.topk(cosine_positive, self.cohort_size, dim=-1, largest=True, sorted=True)
 
@@ -123,7 +117,6 @@ class LossFunction(nn.Module):
         std1 = torch.sqrt(var1)
         var2, mean2 = torch.var_mean(cohort2, dim=-1, keepdims=True)
         std2 = torch.sqrt(var2)
-        torch.clamp(self.w, 1e-6)
 
         if label != None:
             label      = label[:,0]
@@ -166,10 +159,11 @@ class LossFunction(nn.Module):
             out_dot1 = (out_dot-F.hardsigmoid(mean1*self.w2+self.w3))/F.hardsigmoid(std1*self.b2+self.b3)
             out_dot2 = (out_dot-F.hardsigmoid(mean2*self.w2+self.w3))/F.hardsigmoid(std2*self.b2+self.b3)
 
-            out_dot =  0.5*out_dot1 + 0.5*out_dot2
+            out_dot =  0.5*(out_dot1+out_dot2)
+            torch.clamp(self.w, 1e-6)
             cos_sim_matrix = out_dot * self.w + self.b
 
             label = torch.from_numpy(numpy.asarray(range(0,batchsize))).to(x.device)
-            nloss   = self.criterion(cos_sim_matrix, label)
+            nloss   = self.ce2(cos_sim_matrix, label)
 
             return nloss
