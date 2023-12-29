@@ -1,6 +1,9 @@
 #!/bin/bash
 
-python train_voxceleb.py \
+# python train_voxceleb.py \
+# --config ./configs/BC_Res2Net_AAM.yaml \
+
+python DEV_train_voxceleb.py \
 --config ./configs/ECAPATDNN512_AAM2.yaml \
 
 # python train_voxceleb.py \

@@ -79,13 +79,13 @@ class Bottle2neck(nn.Module):
 
 
 class ECAPA_TDNN(nn.Module):
-    def __init__(self, C = 512, nOut = 256, n_mels = 80, log_input = True, **kwargs):
+    def __init__(self, C = 512, nOut = 192, n_mels = 80, log_input = True, **kwargs):
         super(ECAPA_TDNN, self).__init__()
 
         self.torchfbank = torch.nn.Sequential(
             PreEmphasis(),            
             torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, \
-                                                 f_min = 20, f_max = 7600, window_fn=torch.hamming_window, n_mels=80),
+                                                 f_min = 20, f_max = 7600, window_fn=torch.hamming_window, n_mels=n_mels),
             )
         self.specaug = FbankAug() # Spec augmentation
 
@@ -179,6 +179,10 @@ if __name__=="__main__":
 
     model.eval()
 
+    pytorch_total_params = sum(p.numel() for p in model.parameters())/ 1000 / 1000
+    print('Model parameters: {:.4f} M'.format(pytorch_total_params))
+    # exit()
+    
     torch.set_num_threads(1)
     import timeit
     model.eval()

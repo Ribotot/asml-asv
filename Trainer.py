@@ -67,7 +67,6 @@ class ModelTrainer(object):
                         sys.exit(1)
                 self.scaler.scale(nloss).backward()
                 if self.clip_grad:
-                    # param_norms = clip_gradients(self.__model__, self.clip_grad)
                     nn.utils.clip_grad_norm_(self.__model__.parameters(), max_norm=self.clip_grad)
                 self.scaler.step(self.__optimizer__)
                 self.scaler.update()
@@ -77,7 +76,6 @@ class ModelTrainer(object):
                     print("Loss is {}, stopping training".format(nloss.item()), force=True)
                     sys.exit(1)
                 if self.clip_grad:
-                    # param_norms = clip_gradients(self.__model__, self.clip_grad)
                     nn.utils.clip_grad_norm_(self.__model__.parameters(), max_norm=self.clip_grad)
                 nloss.backward()
                 self.__optimizer__.step()

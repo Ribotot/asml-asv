@@ -87,7 +87,7 @@ parser.add_argument('--rir_path',          type=str,   default="/media/jh2/f22b5
 
 ## Model definition
 parser.add_argument('--n_mels',         type=int,   default=40,     help='Number of mel filterbanks')
-parser.add_argument('--log_input',      type=bool,  default=False,  help='Log input features')
+parser.add_argument('--log_input',      type=bool,  default=True,  help='Log input features')
 parser.add_argument('--model',          type=str,   default="",     help='Name of model definition')
 parser.add_argument('--encoder_type',   type=str,   default="SAP",  help='Type of encoder')
 parser.add_argument('--nOut',           type=int,   default=512,    help='Embedding size in the last FC layer')
@@ -168,7 +168,7 @@ def main_worker(gpu, ngpus_per_node, args):
         worker_init_fn=worker_init_fn,
         drop_last=True,
     )
-    
+
     if args.scheduler == 'onecyclelr':
         epoch_per_sample = []
         for _ in range(10):
