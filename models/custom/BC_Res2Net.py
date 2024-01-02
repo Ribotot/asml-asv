@@ -16,137 +16,6 @@ from models.asml.bc2resnet.common import (ResNorm,
                                           Transition2BlockMod,
                                           trunc_normal_)
 
-class FeaturePyramidSmoothingConv(nn.Module):
-    def __init__(self,
-                 in_channels: int,
-                 num_sub_bands: int = 2,
-                 norm_type: str = 'bn',
-                 dropout: float = .1,
-                 bias: bool = False):
-        super(FeaturePyramidSmoothingConv, self).__init__()
-
-        self.smoothing = Broadcast2BlockMod(
-            input_dims=in_channels,
-            num_sub_bands=num_sub_bands,
-            norm_type=norm_type,
-            bias=bias,
-            dropout=dropout,
-        )
-
-        self.pooling = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),
-            nn.Flatten(1),
-        )
-
-    def forward(self, inputs):
-        out = self.smoothing(inputs)
-        out = self.pooling(out)
-        return out
-
-
-class FeaturePyramidModule(nn.Module):
-    def __init__(self,
-                 channel_list: list,
-                 norm_type: str = 'bn',
-                 bias: bool = False,
-                 dropout: float = .1,
-                 up_sample_method: str = 'bilinear',
-                 down_sample_stages: list = None,
-                 num_two_stage_categorization_class: int = 0,
-                 **kwargs):
-        super(FeaturePyramidModule, self).__init__()
-
-        stage_ch_list = channel_list[1:]
-        num_stages = len(stage_ch_list)
-
-        self.down_ch_conv_list = nn.ModuleList([
-            nn.Conv2d(
-                in_channels=ch,
-                out_channels=stage_ch_list[0],
-                kernel_size=(1, 1),
-                bias=bias
-            )
-            for ch in reversed(stage_ch_list)
-        ])
-
-        self.up_sample_method = up_sample_method
-        if self.up_sample_method == 'bilinear':
-            self.up_sample = nn.Upsample(
-                scale_factor=(2, 2),
-                mode='bilinear',
-                align_corners=True
-            )
-        elif self.up_sample_method == 'transposed':
-            self.up_sample = nn.ModuleList(reversed([
-                nn.Sequential(
-                    nn.ConvTranspose2d(
-                        in_channels=stage_ch_list[0],
-                        out_channels=stage_ch_list[0],
-                        kernel_size=(2, 2),
-                        stride=(2, 2),
-                        bias=bias
-                    )
-                ) if idx + 1 in down_sample_stages else None for idx in range(num_stages)
-            ]))
-        elif self.up_sample_method == 'pixel_shuffle':
-            self.up_sample = nn.ModuleList(reversed([
-                nn.Sequential(
-                    nn.Conv2d(
-                        in_channels=stage_ch_list[0],
-                        out_channels=stage_ch_list[0] * 2 ** 2,
-                        kernel_size=(1, 1),
-                        bias=bias
-                    ),
-                    nn.PixelShuffle(
-                        upscale_factor=2,
-                    ),
-                ) if idx + 1 in down_sample_stages else None for idx in range(num_stages)
-            ]))
-        else:
-            ValueError("up_sample_method must be in [bilinear, transposed, pixel_shuffle].")
-
-        self.smoothing_conv_list = nn.ModuleList([
-            FeaturePyramidSmoothingConv(
-                in_channels=stage_ch_list[0],
-                num_sub_bands=2,
-                norm_type=norm_type,
-                dropout=dropout,
-                bias=bias
-            ) for _ in range(len(stage_ch_list))
-        ])
-
-    def forward(self, f_map_list):
-        prev_f_map = None
-        f_map_list = list(reversed(f_map_list))
-
-        out_list = []
-        for idx, (f_map, down_ch_conv) in enumerate(zip(f_map_list, self.down_ch_conv_list)):
-
-            # Down conv to lowest num channels
-            curr_f_map = down_ch_conv(f_map)
-
-            # Initialize prev_f_map
-            if prev_f_map is None:
-                prev_f_map = curr_f_map
-                out = self.smoothing_conv_list[idx](prev_f_map)
-                out_list.append(out)
-                continue
-
-            if prev_f_map.shape != curr_f_map.shape:
-                if self.up_sample_method == 'bilinear':
-                    prev_f_map = self.up_sample(prev_f_map)
-                else:
-                    if self.up_sample[idx] is not None:
-                        prev_f_map = self.up_sample[idx](prev_f_map)
-
-            prev_f_map = prev_f_map + curr_f_map
-            out = self.smoothing_conv_list[idx](prev_f_map)
-            out_list.append(out)
-
-        out = torch.cat(out_list, dim=1)
-
-        return out
-
 
 class BroadcastPyramidResNet(nn.Module):
     def __init__(self,
@@ -314,14 +183,6 @@ class BroadcastPyramidResNet(nn.Module):
             bias=layer_attr['bias'],
         )
 
-        self.feature_pyramid_module = FeaturePyramidModule(
-            channel_list=channels_list,
-            up_sample_method=up_sample_method,
-            down_sample_stages=[1, 2],
-            num_two_stage_categorization_class=num_two_stage_categorization_class,
-            **layer_attr,
-        )
-
         self.pools_blocks = nn.ModuleList()
         for base in self.channel_list[1:]:  
             bottle_base = int(base/2)
@@ -379,8 +240,6 @@ class BroadcastPyramidResNet(nn.Module):
         return stage_out_list
 
     def _before_penultimate(self, x_list):
-        # x = self.feature_pyramid_module(x_list)
-
         pool_stats=[]    
         for x, stats_pooling in zip(x_list, self.pools_blocks):
 
@@ -448,7 +307,7 @@ def MainModel(**kwargs):
 
 if __name__=="__main__":
     # batch_size, num_frames, feat_dim = 1, 3000, 80
-    batch_size, second = 1, 4
+    batch_size, second = 1, 1
     x = torch.randn(batch_size, int(second*16000))
     # x_tp = x.transpose(1, 2)
     channel_list = [80, 40, 60, 80, 100]
@@ -489,7 +348,6 @@ if __name__=="__main__":
     # exit()
 
     from fvcore.nn import FlopCountAnalysis
-    # self.forward = self.entire_wave2emb ## for use FlopCountAnalysis (Comment out def forward)
     model.eval()
     flops = FlopCountAnalysis(model, x)
-    print(flops.total())
+    print('FLOPs: {:.4f} M'.format(flops.total()/1000/1000))

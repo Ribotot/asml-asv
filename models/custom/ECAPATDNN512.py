@@ -79,7 +79,7 @@ class Bottle2neck(nn.Module):
 
 
 class ECAPA_TDNN(nn.Module):
-    def __init__(self, C = 512, nOut = 192, n_mels = 80, log_input = True, **kwargs):
+    def __init__(self, C = 512, bottleneck = 128, nOut = 192, n_mels = 80, log_input = True, **kwargs):
         super(ECAPA_TDNN, self).__init__()
 
         self.torchfbank = torch.nn.Sequential(
@@ -87,7 +87,7 @@ class ECAPA_TDNN(nn.Module):
             torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, \
                                                  f_min = 20, f_max = 7600, window_fn=torch.hamming_window, n_mels=n_mels),
             )
-        self.specaug = FbankAug() # Spec augmentation
+        self.specaug = FbankAug(freq_mask_width = (0, 5), time_mask_width = (0, 5)) # Spec augmentation
 
         self.log_input = log_input
         self.conv1  = nn.Conv1d(n_mels, C, kernel_size=5, stride=1, padding=2)
@@ -99,11 +99,9 @@ class ECAPA_TDNN(nn.Module):
         self.layer4 = nn.Conv1d(3*C, 1536, kernel_size=1)
 
         self.attention = nn.Sequential(
-            nn.Conv1d(4608, 256, kernel_size=1),
-            nn.ReLU(),
-            nn.BatchNorm1d(256),
+            nn.Conv1d(4608, bottleneck, kernel_size=1),
             nn.Tanh(),
-            nn.Conv1d(256, 1536, kernel_size=1),
+            nn.Conv1d(bottleneck, 1536, kernel_size=1),
             nn.Softmax(dim=2),
             )
         self.bn5 = nn.BatchNorm1d(3072)
@@ -115,8 +113,8 @@ class ECAPA_TDNN(nn.Module):
         x = self.relu(x)
         x = self.bn1(x)
         x1 = self.layer1(x)
-        x2 = self.layer2(x+x1)
-        x3 = self.layer3(x+x1+x2)
+        x2 = self.layer2(x1)
+        x3 = self.layer3(x2)
         x = self.layer4(torch.cat((x1,x2,x3),dim=1))
         x = self.relu(x)
         return x
@@ -157,6 +155,10 @@ class ECAPA_TDNN(nn.Module):
         emb = self._before_penultimate(late_feat)
         return emb
 
+    def feat2emb(self, feat):
+        late_feat = self._before_pooling(feat)
+        emb = self._before_penultimate(late_feat)
+        return emb
 
     def forward(self, x, max_frame=False, aug=False):
         x = self.wave2emb(x, max_frame, aug=False)
@@ -171,11 +173,11 @@ def MainModel(**kwargs):
 
 if __name__=="__main__":
     # batch_size, num_frames, feat_dim = 1, 3000, 80
-    batch_size, second = 1, 4
+    batch_size, second = 1, 1
     x = torch.randn(batch_size, int(second*16000))
     # x_tp = x.transpose(1, 2)
 
-    model = ECAPA_TDNN(nOut = 256)
+    model = ECAPA_TDNN(nOut = 192)
 
     model.eval()
 
@@ -202,7 +204,6 @@ if __name__=="__main__":
     # exit()
 
     from fvcore.nn import FlopCountAnalysis
-    # self.forward = self.entire_wave2emb ## for use FlopCountAnalysis (Comment out def forward)
     model.eval()
     flops = FlopCountAnalysis(model, x)
-    print(flops.total())
+    print('FLOPs: {:.4f} M'.format(flops.total()/1000/1000))

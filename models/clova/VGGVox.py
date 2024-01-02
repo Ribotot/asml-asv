@@ -111,6 +111,10 @@ class MainModel(nn.Module):
         emb = self._before_penultimate(late_feat)
         return emb
 
+    def feat2emb(self, feat):
+        late_feat = self._before_pooling(feat)
+        emb = self._before_penultimate(late_feat)
+        return emb
 
     def forward(self, x, max_frame=False, aug=False):
         x = self.wave2emb(x, max_frame, aug=False)
