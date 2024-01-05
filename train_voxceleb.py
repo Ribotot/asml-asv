@@ -11,7 +11,7 @@ import warnings
 import datetime
 from tuneThreshold import *
 from Trainer import *
-from dataloader_voxceleb import *
+from dataloader_train import *
 from utils import *
 from SpeakerNet import WrappedModel, SpeakerNet
 import torch.distributed as dist
@@ -28,7 +28,6 @@ parser.add_argument('--config',         type=str,   default=None,   help='Config
 
 ## Data loader
 parser.add_argument('--max_frames',     type=int,   default=200,    help='Input length to the network for training')
-parser.add_argument('--eval_frames',    type=str,   default=None,   help='Input length to the network for testing None uses the whole files')
 parser.add_argument('--batch_size',     type=int,   default=200,    help='Batch size, number of speakers per batch')
 parser.add_argument('--max_seg_per_spk', type=int,  default=500,    help='Maximum number of utterances per speaker per epoch')
 parser.add_argument('--nDataLoaderThread', type=int, default=6,     help='Number of loader threads')
@@ -171,7 +170,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     if args.scheduler == 'onecyclelr':
         epoch_per_sample = []
-        for _ in range(10):
+        for _ in range(1):
             iter(train_sampler)
             epoch_per_sample.append(len(train_sampler))
         args.epoch_per_sample = max(epoch_per_sample)

@@ -4,12 +4,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy, sys, random, math
-import time, itertools, importlib
-
-from dataloader_voxceleb import test_dataset_loader
-from torch.cuda.amp import autocast, GradScaler
-from utils import save_on_master
+import importlib
 
 
 class WrappedModel(nn.Module):

@@ -11,7 +11,7 @@ import warnings
 import datetime
 from tuneThreshold import *
 from dataloader_inference import *
-from Inferencer_voxceleb import *
+from Inferencer_voices import *
 from SpeakerNet import WrappedModel, SpeakerNet
 warnings.simplefilter("ignore")
 
@@ -64,22 +64,23 @@ parser.add_argument('--save_path',      type=str,   default="exps/exp1", help='P
 ## Test option
 parser.add_argument('--enroll_frames',  type=int,   default=None,    help='Input length to the network for training')
 parser.add_argument('--test_frames',    type=int,   default=None,    help='Input length to the network for training')
-parser.add_argument('--crop_option',    type=str,   default=None,    choices=['F', 'C', 'R'], help='Initial crop_option. F, C, and R denote "front", "center", and "random", respectively')
-parser.add_argument('--extract_once',      type=bool,  default=True,    help='Extract enroll test utterances at once')
+parser.add_argument('--crop_option',    type=str,   default=None,   choices=['F', 'C', 'R'], help='Initial crop_option. F, C, and R denote "front", "center", and "random", respectively')
 
 ## Test data (For test only)
-parser.add_argument('--test_trial',     type=str,   default="O",   choices=['O', 'E', 'H'], help='Initial test_trial')
-# parser.add_argument('--original_list',  type=str,   default="data/test_list_o.txt",   help='VoxCeleb1-O original trial list')
-# parser.add_argument('--extend_list',    type=str,   default="data/test_list_e.txt",   help='VoxCeleb1-E original trial list')
-# parser.add_argument('--hard_list',      type=str,   default="data/test_list_h.txt",   help='VoxCeleb1-H original trial list')
-# parser.add_argument('--all_path',       type=str,   default="data/voxceleb1/trian",   help='Absolute path to the VoxCeleb1 train set')
-# parser.add_argument('--test_path',      type=str,   default="data/voxceleb1/test",    help='Absolute path to the VoxCeleb1 test set')
+parser.add_argument('--test_trial',     type=str,   default="dev",   choices=['dev', 'eval'], help='Initial test_trial')
+# parser.add_argument('--dev_list',       type=str,   default="data/test_list_dev.txt",     help='VoxCeleb1-O original trial list')
+# parser.add_argument('--dev_enr_list',   type=str,   default="data/dev-enroll.lst",        help='VOiCES2019 eval trial list')
+# parser.add_argument('--eval_list',      type=str,   default="data/test_list_eval.txt",    help='VoxCeleb1-E original trial list')
+# parser.add_argument('--eval_enr_list',  type=str,   default="data/eval-enroll.lst",       help='VOiCES2019 eval trial list')
+# parser.add_argument('--dev_path',       type=str,   default="data/voices2019/trian",       help='Absolute path to the VoxCeleb1 train set')
+# parser.add_argument('--eval_path',      type=str,   default="data/voices2019/test",        help='Absolute path to the VoxCeleb1 test set')
     ########## real example (Choi Jeong-Hwan) ########### 
-parser.add_argument('--original_list',  type=str,   default="/home/jh2/Workspace/cjh/fire/sess_torch/meta_vc1/veri_test_clean.txt",     help='VoxCeleb1-O original trial list')
-parser.add_argument('--extend_list',    type=str,   default="/home/jh2/Workspace/cjh/fire/sess_torch/meta_vc1/list_test_all_clean.txt",     help='VoxCeleb1-O original trial list')
-parser.add_argument('--hard_list',      type=str,   default="/home/jh2/Workspace/cjh/fire/sess_torch/meta_vc1/list_test_hard_clean.txt",     help='VoxCeleb1-O original trial list')
-parser.add_argument('--all_path',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/VoxCeleb1/",   help='Absolute path to the VoxCeleb1 dev&test set')
-parser.add_argument('--test_path',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/VoxCeleb1/test/wav/", help='Absolute path to the VoxCeleb1 test set')
+parser.add_argument('--dev_list',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/VOiCES_competition/VOiCES_Box_unzip/Development_Data/Speaker_Recognition/sid_dev_lists_and_keys/dev-trial-keys.lst",     help='VOiCES2019 dev trial list')
+parser.add_argument('--dev_enr_list',   type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/VOiCES_competition/VOiCES_Box_unzip/Development_Data/Speaker_Recognition/sid_dev_lists_and_keys/dev-enroll.lst",     help='VOiCES2019 dev trial list')
+parser.add_argument('--eval_list',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/VOiCES_competition/VOiCES_Box_unzip/VOiCES_challenge_2019_post-eval-release/VOiCES_challenge_2019_eval.SID.trial-keys.lst",     help='VOiCES2019 eval trial list')
+parser.add_argument('--eval_enr_list',  type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/VOiCES_competition/VOiCES_Box_unzip/Speaker_Recognition/sid_eval_lists/eval-enroll.lst",     help='VOiCES2019 eval trial list')
+parser.add_argument('--dev_path',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/VOiCES_competition/VOiCES_Box_unzip/Development_Data/Speaker_Recognition/",   help='Absolute path to the VOiCES2019 dev set')
+parser.add_argument('--eval_path',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/VOiCES_competition/VOiCES_Box_unzip/Speaker_Recognition/", help='Absolute path to the VOiCES2019 eval set')
 
 
 ## Model definition
@@ -131,17 +132,16 @@ def main_worker(gpu, ngpus_per_node, args):
 
     args.gpu = args.gpu_id
 
-    if args.test_trial == "O":
-        args.test_list = args.original_list
-        trial_type = '/voxceleb1_original'
-    elif args.test_trial == "E":
-        args.test_list = args.extend_list
-        args.test_path = args.all_path
-        trial_type = '/voxceleb1_extend'
-    elif args.test_trial == "H":
-        args.test_list = args.hard_list
-        args.test_path = args.all_path
-        trial_type = '/voxceleb1_hard'
+    if args.test_trial == "dev":
+        args.test_list   = args.dev_list
+        args.enroll_list = args.dev_enr_list
+        args.test_path   = args.dev_path
+        trial_type = '/voices2019_dev'
+    elif args.test_trial == "eval":
+        args.test_list   = args.eval_list
+        args.enroll_list = args.eval_enr_list
+        args.test_path   = args.eval_path
+        trial_type = '/voices2019_eval'
     else:
         raise ValueError('Undefined test trial type')    
 

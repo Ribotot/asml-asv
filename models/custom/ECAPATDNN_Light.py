@@ -40,7 +40,7 @@ class Bottle2neck(nn.Module):
         bns         = []
         num_pad = math.floor(kernel_size/2)*dilation
         for i in range(self.nums):
-            convs.append(nn.Conv1d(width, width, kernel_size=kernel_size, dilation=dilation, padding=num_pad))
+            convs.append(nn.Conv1d(width, width, kernel_size=kernel_size, dilation=dilation, padding=num_pad, groups=width))
             bns.append(nn.BatchNorm1d(width))
         self.convs  = nn.ModuleList(convs)
         self.bns    = nn.ModuleList(bns)
@@ -79,7 +79,7 @@ class Bottle2neck(nn.Module):
 
 
 class ECAPA_TDNN(nn.Module):
-    def __init__(self, C = 512, bottleneck = 128, nOut = 192, n_mels = 80, log_input = True, **kwargs):
+    def __init__(self, C = 144, bottleneck = 128, nOut = 192, n_mels = 80, log_input = True, **kwargs):
         super(ECAPA_TDNN, self).__init__()
 
         self.torchfbank = torch.nn.Sequential(
@@ -90,24 +90,24 @@ class ECAPA_TDNN(nn.Module):
         self.specaug = FbankAug(freq_mask_width = (0, 5), time_mask_width = (0, 5)) # Spec augmentation
 
         self.log_input = log_input
-        self.conv1  = nn.Conv1d(n_mels, C, kernel_size=5, stride=1, padding=2)
+        self.conv1  = nn.Conv1d(n_mels, C, kernel_size=3, stride=2, padding=1)
         self.relu   = nn.ReLU()
         self.bn1    = nn.BatchNorm1d(C)
-        self.layer1 = Bottle2neck(C, C, kernel_size=3, dilation=2, scale=8, bottleneck=bottleneck)
-        self.layer2 = Bottle2neck(C, C, kernel_size=3, dilation=3, scale=8, bottleneck=bottleneck)
-        self.layer3 = Bottle2neck(C, C, kernel_size=3, dilation=4, scale=8, bottleneck=bottleneck)
-        self.layer4 = nn.Conv1d(3*C, 1536, kernel_size=1)
+        self.layer1 = Bottle2neck(C, C, kernel_size=5, dilation=1, scale=8, bottleneck=bottleneck)
+        self.layer2 = Bottle2neck(C, C, kernel_size=7, dilation=1, scale=8, bottleneck=bottleneck)
+        self.layer3 = Bottle2neck(C, C, kernel_size=9, dilation=1, scale=8, bottleneck=bottleneck)
+        self.layer4 = nn.Conv1d(C, C, kernel_size=1)
 
         self.attention = nn.Sequential(
-            nn.Conv1d(4608, bottleneck, kernel_size=1),
+            nn.Conv1d(C, bottleneck, kernel_size=1),
             # nn.ReLU(),
-            # nn.BatchNorm1d(bottleneck),   # I remove this layer 
+            # nn.BatchNorm1d(bottleneck),   # i remove this layer 
             nn.Tanh(),
-            nn.Conv1d(bottleneck, 1536, kernel_size=1),
+            nn.Conv1d(bottleneck, C, kernel_size=1),
             nn.Softmax(dim=2),
             )
-        self.bn5 = nn.BatchNorm1d(3072)
-        self.fc6 = nn.Linear(3072, nOut)
+        self.bn5 = nn.BatchNorm1d(2*C)
+        self.fc6 = nn.Linear(2*C, nOut)
         self.bn6 = nn.BatchNorm1d(nOut)
 
     def _before_pooling(self, x):
@@ -117,14 +117,12 @@ class ECAPA_TDNN(nn.Module):
         x1 = self.layer1(x)
         x2 = self.layer2(x1)
         x3 = self.layer3(x2)
-        x = self.layer4(torch.cat((x1,x2,x3),dim=1))
+        x = self.layer4(x1+x2+x3)
         x = self.relu(x)
         return x
 
     def _before_penultimate(self, x):
-        t = x.size()[-1]
-        global_x = torch.cat((x,torch.mean(x,dim=2,keepdim=True).repeat(1,1,t), torch.sqrt(torch.var(x,dim=2,keepdim=True).clamp(min=1e-4)).repeat(1,1,t)), dim=1)
-        w = self.attention(global_x)
+        w = self.attention(x)
         mu = torch.sum(x * w, dim=2)
         sg = torch.sqrt( ( torch.sum((x**2) * w, dim=2) - mu**2 ).clamp(min=1e-6) )
         x = torch.cat((mu,sg),1)
@@ -179,7 +177,7 @@ if __name__=="__main__":
     x = torch.randn(batch_size, int(second*16000))
     # x_tp = x.transpose(1, 2)
 
-    model = ECAPA_TDNN(nOut = 192)
+    model = ECAPA_TDNN()
 
     model.eval()
 
