@@ -7,7 +7,8 @@ import torch.nn.functional as F
 import os, glob, numpy, sys, random
 import time, itertools, importlib
 
-from dataloader_inference import test_dataset_loader, test_dataset_loader_dict, test_dataset_loader_multichannel_dict
+from dataloader_inference import test_dataset_loader, test_dataset_loader_dict, \
+                                test_dataset_loader_multichannel_robovox, test_dataset_loader_multichannel_dict
 from torch.cuda.amp import autocast, GradScaler
 from utils import save_on_master, load_dict_txt, load_dict_npy, numpy_normalize
 
@@ -56,7 +57,7 @@ class ModelInferencer(object):
     ## Evaluate from list
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
-    def evaluateFromList(self, test_trial, test_list, test_path, channel, nDataLoaderThread, \
+    def evaluateFromList(self, test_trial, test_list, test_path, nDataLoaderThread, \
         distributed, print_interval=100, **kwargs):
 
         if distributed:
@@ -100,7 +101,7 @@ class ModelInferencer(object):
         setfiles.update(enr_dict)
 
         if test_trial == 'multi':
-            test_dataset = test_dataset_loader_multichannel_dict(setfiles, channel, **kwargs)
+            test_dataset = test_dataset_loader_multichannel_robovox(setfiles, **kwargs)
         else:
             test_dataset = test_dataset_loader_dict(setfiles, **kwargs)
 
@@ -192,7 +193,7 @@ class ModelInferencer(object):
     ## Evaluate from list with score normalize (adaptive s-norm)
     ## ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
 
-    def evaluateFromList_easy_aSn(self, test_trial, test_list, test_path, channel, nDataLoaderThread, \
+    def evaluateFromList_easy_aSn(self, test_trial, test_list, test_path, nDataLoaderThread, \
         distributed, coh_size=100, print_interval=100, **kwargs):
 
         if distributed:
@@ -240,7 +241,7 @@ class ModelInferencer(object):
         setfiles.update(enr_dict)
 
         if test_trial == 'multi':
-            test_dataset = test_dataset_loader_multichannel_dict(setfiles, channel, **kwargs)
+            test_dataset = test_dataset_loader_multichannel_robovox(setfiles, **kwargs)
         else:
             test_dataset = test_dataset_loader_dict(setfiles, **kwargs)
 
@@ -361,7 +362,7 @@ class ModelInferencer(object):
     ## Evaluation with speaker embedding saving (only testset)
     ## ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
 
-    def evaluateFromList_saveSE(self, test_trial, test_list, test_path, channel, nDataLoaderThread, \
+    def evaluateFromList_saveSE(self, test_trial, test_list, test_path, nDataLoaderThread, \
         distributed, result_save_path, epoch, print_interval=100, **kwargs):
 
         if distributed:
@@ -421,7 +422,7 @@ class ModelInferencer(object):
         if not os.path.isfile(arkfile_enr):
             ## Define test data loader
             if test_trial == 'multi':
-                test_dataset = test_dataset_loader_multichannel_dict(setfiles, channel, **kwargs)
+                test_dataset = test_dataset_loader_multichannel_robovox(setfiles, **kwargs)
             else:
                 test_dataset = test_dataset_loader_dict(setfiles, **kwargs)
 
@@ -475,7 +476,7 @@ class ModelInferencer(object):
             if not os.path.isfile(arkfile_te):
                 ## Define test data loader
                 if test_trial == 'multi':
-                    test_dataset = test_dataset_loader_multichannel_dict(setfiles, channel, **kwargs)
+                    test_dataset = test_dataset_loader_multichannel_robovox(setfiles, **kwargs)
                 else:
                     test_dataset = test_dataset_loader_dict(setfiles, **kwargs)
 

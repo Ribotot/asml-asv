@@ -101,7 +101,7 @@ class ECAPA_TDNN(nn.Module):
         self.attention = nn.Sequential(
             nn.Conv1d(C, bottleneck, kernel_size=1),
             # nn.ReLU(),
-            # nn.BatchNorm1d(bottleneck),   # i remove this layer 
+            # nn.BatchNorm1d(bottleneck),   # I remove this layer 
             nn.Tanh(),
             nn.Conv1d(bottleneck, C, kernel_size=1),
             nn.Softmax(dim=2),

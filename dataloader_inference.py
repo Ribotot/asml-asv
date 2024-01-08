@@ -50,7 +50,7 @@ def loadWAV(filename, max_frames=None):
         for asf in startframe:
             feats.append(audio[int(asf):int(asf)+max_audio])
 
-    feat = numpy.stack(feats,axis=0).astype(numpy.float)
+    feat = numpy.stack(feats,axis=0).astype(numpy.float64)
 
     return feat;
 
@@ -82,6 +82,43 @@ def loadWAV_multi2single(filename, channel=0, max_frames=None):
             feats.append(audio[int(asf):int(asf)+max_audio])
 
     feat = numpy.stack(feats,axis=0).astype(numpy.float)
+
+    return feat;
+
+def loadWAV_multi2single_rescale(filename, channel=0, resclae=True, max_frames=None):
+    # Read wav file and convert to torch tensor
+    audio, sample_rate = soundfile.read(filename)
+    audio = audio[:,channel]
+    audiosize = audio.shape[0]
+
+    # Maximum audio length
+    if max_frames == None:
+        max_audio = audiosize
+
+        feats = []
+        feats.append(audio)
+
+    else:
+        max_audio = int(max_frames) * 160 + 240
+
+        if audiosize <= max_audio:
+            shortage    = max_audio - audiosize + 1 
+            audio       = numpy.pad(audio, (0, shortage), 'wrap')
+            audiosize   = audio.shape[0]
+
+        startframe = numpy.array([numpy.int64(random.random()*(audiosize-max_audio))])
+        
+        feats = []
+        for asf in startframe:
+            feats.append(audio[int(asf):int(asf)+max_audio])
+
+    feat = numpy.stack(feats,axis=0).astype(numpy.float)
+    if resclae:
+        max_value = max([numpy.max(feat, axis=1), numpy.min(feat, axis=1)*(-1)])
+        if max_value < 0.5:
+            feat = feat*0.5/max_value
+        elif max_value > 0.95:
+            feat = feat*0.5/max_value
 
     return feat;
 
@@ -134,6 +171,30 @@ class test_dataset_loader_multichannel_dict(Dataset):
 
     def __getitem__(self, index):
         audio = loadWAV_multi2single(os.path.join(self.test_dict[self.test_list[index]]), self.channel)
+        return torch.FloatTensor(audio), self.test_list[index]
+
+    def __len__(self):
+        return len(self.test_list)
+
+class test_dataset_loader_multichannel_robovox(Dataset):
+    def __init__(self, test_dict, **kwargs):
+        self.test_dict  = test_dict
+        files           = self.test_dict.keys()
+        self.test_list  = list(set(files))
+        self.test_list.sort()
+        self.enr_channel = 4
+        # self.te_channel = 4
+        self.te_channel = 3
+
+    def __getitem__(self, index):
+        path = self.test_dict[self.test_list[index]]
+        path_list = list(path.strip().split('/'))
+        if 'enrollment' in path_list:
+            channel = self.enr_channel
+        else:
+            channel = self.te_channel
+        # audio = loadWAV_multi2single(os.path.join(path), channel)
+        audio = loadWAV_multi2single_rescale(os.path.join(path), channel)
         return torch.FloatTensor(audio), self.test_list[index]
 
     def __len__(self):

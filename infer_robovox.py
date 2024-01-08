@@ -222,7 +222,8 @@ def min_max_norm(input_):
     min_value = min(input_)
     max_value = max(input_)
     scale = max_value - min_value
-    output = (input_- min_value) / scale
+    output = (input_- min_value) / (scale)
+    output = output * 0.9999998 + 0.0000001
     # print(output[0:10])
     # output = []
     # for line in input_:

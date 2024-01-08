@@ -1,6 +1,5 @@
 # Copyright 2023 Choi Jeong-Hwan
 
-
 import math
 import torch
 import torch.nn as nn
@@ -57,7 +56,7 @@ class Global_FE(nn.Module):
         bns         = []
         num_pad = math.floor(kernel_size/2)*dilation
         for i in range(self.nums):
-            convs.append(nn.Conv1d(width, width, kernel_size=kernel_size, dilation=dilation, padding=num_pad))
+            convs.append(nn.Conv1d(width, width, kernel_size=kernel_size, dilation=dilation, padding=num_pad, groups=width))
             bns.append(nn.BatchNorm1d(width))
         self.convs  = nn.ModuleList(convs)
         self.bns    = nn.ModuleList(bns)
@@ -105,11 +104,13 @@ class Local_FE_Block(nn.Module):
     def __init__(self, inplanes, planes, frequncy, kernel_size=(3, 3), stride=(1, 1), bottleneck=128):
         super(Local_FE_Block, self).__init__()
 
-        self.conv1  = nn.Conv2d(inplanes, inplanes, kernel_size=kernel_size, stride=stride, padding=(1, 1))
+        self.conv1  = nn.Conv2d(inplanes, inplanes, kernel_size=(3, 3), stride=stride, padding=(1, 1))
+        # self.conv1  = nn.Conv2d(inplanes, inplanes, kernel_size=(1, 1), stride=stride)
         self.bn1    = nn.BatchNorm2d(inplanes)
-        self.conv2  = nn.Conv2d(inplanes, inplanes, kernel_size=kernel_size, padding=(1, 1))
+        num_pad = (math.floor(kernel_size[0]/2), math.floor(kernel_size[1]/2))
+        self.conv2  = nn.Conv2d(inplanes, inplanes, kernel_size=kernel_size, padding=num_pad, groups=inplanes)
         self.bn2    = nn.BatchNorm2d(inplanes)
-        self.conv3  = nn.Conv2d(inplanes, planes, kernel_size=kernel_size, padding=(1, 1))
+        self.conv3  = nn.Conv2d(inplanes, planes, kernel_size=(1, 1))
         self.bn3    = nn.BatchNorm2d(planes)
         self.relu   = nn.ReLU()
         self.fwse   = fwSEModule(frequncy, bottleneck)
@@ -117,7 +118,7 @@ class Local_FE_Block(nn.Module):
         self.size_mismatch = False
         if stride[0] != 1 or inplanes != planes:
             self.size_mismatch = True
-            self.conv4 = nn.Conv2d(inplanes, planes, kernel_size=(3, 3), stride=stride, padding=(1, 1))
+            self.conv4 = nn.Conv2d(inplanes, planes, kernel_size=(1, 1), stride=stride)
     def forward(self, x):
         residual = x
         out = self.conv1(x)
@@ -137,61 +138,46 @@ class Local_FE_Block(nn.Module):
         return out 
 
 class ECAPA_TDNN(nn.Module):
-    def __init__(self, C = 1024, hidden=164, bottleneck = 128, nOut = 192, n_fft = 510, log_input = False, **kwargs):
+    def __init__(self, C = 144, hidden=24, bottleneck = 128, nOut = 192, n_mels = 80, log_input = False, **kwargs):
         super(ECAPA_TDNN, self).__init__()
 
         self.torchfbank = torch.nn.Sequential(
             PreEmphasis(),            
-            torchaudio.transforms.Spectrogram(n_fft=n_fft, win_length=400, hop_length=160)
-            # torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, \
-            #                                      f_min = 20, f_max = 7600, window_fn=torch.hamming_window, n_mels=n_mels),
+            torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, \
+                                                 f_min = 20, f_max = 7600, window_fn=torch.hamming_window, n_mels=n_mels),
             )
-        self.specaug = FbankAug(freq_mask_width = (0, 32), time_mask_width = (0, 5)) # Spec augmentation
-        # self.specaug = FbankAug(freq_mask_width = (0, 5), time_mask_width = (0, 5)) # Spec augmentation
+        self.specaug = FbankAug(freq_mask_width = (0, 5), time_mask_width = (0, 5)) # Spec augmentation
 
         self.log_input = log_input
         self.block1D_1 = nn.Sequential(
-            Local_FE_Block(1, hidden, 256, stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(hidden, hidden, 256, stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(hidden, hidden, 256, stride=(1, 1), bottleneck=bottleneck),
+            Local_FE_Block(1, hidden, n_mels, kernel_size=(3, 3), stride=(1, 2), bottleneck=bottleneck),
             )
         self.block1D_2 = nn.Sequential(
-            Local_FE_Block(hidden, hidden, 256, stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(hidden, hidden, 256, stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(hidden, hidden, 256, stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(hidden, hidden, 128, stride=(2, 1), bottleneck=bottleneck),
+            Local_FE_Block(hidden, hidden, n_mels//2, kernel_size=(3, 3), stride=(2, 1), bottleneck=bottleneck),
             )
         self.block1D_3 = nn.Sequential(
-            Local_FE_Block(hidden, hidden, 128,  stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(hidden, hidden, 128,  stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(hidden, hidden, 128,  stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(hidden, hidden, 64,  stride=(2, 1), bottleneck=bottleneck),
+            Local_FE_Block(hidden, hidden, n_mels//4, kernel_size=(3, 3),  stride=(2, 1), bottleneck=bottleneck),
             )
         self.block1D_4 = nn.Sequential(
-            Local_FE_Block(hidden, nOut, 64,  stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(nOut, nOut, 64,  stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(nOut, nOut, 64,  stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(nOut, nOut, 32,  stride=(2, 1), bottleneck=bottleneck),
+            Local_FE_Block(hidden, hidden, n_mels//4, kernel_size=(3, 3),  stride=(1, 1), bottleneck=bottleneck),
+            Local_FE_Block(hidden, hidden, n_mels//8, kernel_size=(3, 3),  stride=(2, 1), bottleneck=bottleneck),
             )
         self.block1D_5 = nn.Sequential(
-            Local_FE_Block(nOut, nOut, 32,  stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(nOut, nOut, 32,  stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(nOut, nOut, 32,  stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(nOut, nOut, 32,  stride=(1, 1), bottleneck=bottleneck),
-            Local_FE_Block(nOut, nOut, 16,  stride=(2, 1), bottleneck=bottleneck),
+            Local_FE_Block(hidden, hidden, n_mels//8, kernel_size=(3, 3),  stride=(1, 1), bottleneck=bottleneck),
+            Local_FE_Block(hidden, hidden, n_mels//8, kernel_size=(3, 3),  stride=(1, 1), bottleneck=bottleneck),
             )
-        self.block2D = Global_FE(3072, C, 1536, bottleneck=bottleneck)
+        self.block2D = Global_FE(hidden*n_mels//8, C, C, bottleneck=bottleneck)
 
         self.attention = nn.Sequential(
-            nn.Conv1d(1536*3, bottleneck, kernel_size=1),
-            nn.ReLU(),
-            nn.BatchNorm1d(bottleneck),
+            nn.Conv1d(C, bottleneck, kernel_size=1),
+            # nn.ReLU(),
+            # nn.BatchNorm1d(bottleneck),   # I remove this layer 
             nn.Tanh(),
-            nn.Conv1d(bottleneck, 1536, kernel_size=1),
+            nn.Conv1d(bottleneck, C, kernel_size=1),
             nn.Softmax(dim=2),
             )
-        self.bn1 = nn.BatchNorm1d(3072)
-        self.fc2 = nn.Linear(3072, nOut)
+        self.bn1 = nn.BatchNorm1d(2*C)
+        self.fc2 = nn.Linear(2*C, nOut)
         self.bn2 = nn.BatchNorm1d(nOut)
 
     def _before_pooling(self, x):
@@ -206,9 +192,7 @@ class ECAPA_TDNN(nn.Module):
         return x
 
     def _before_penultimate(self, x):
-        t = x.size()[-1]
-        global_x = torch.cat((x,torch.mean(x,dim=2,keepdim=True).repeat(1,1,t), torch.sqrt(torch.var(x,dim=2,keepdim=True).clamp(min=1e-4)).repeat(1,1,t)), dim=1)
-        w = self.attention(global_x)
+        w = self.attention(x)
         mu = torch.sum(x * w, dim=2)
         sg = torch.sqrt( ( torch.sum((x**2) * w, dim=2) - mu**2 ).clamp(min=1e-6) )
         x = torch.cat((mu,sg),1)
@@ -271,23 +255,23 @@ if __name__=="__main__":
     print('Model parameters: {:.4f} M'.format(pytorch_total_params))
     # exit()
     
-    torch.set_num_threads(1)
-    import timeit
-    model.eval()
-    number = 10
-    end_start = timeit.timeit(stmt='model(x)', globals=globals(), number=number)
-    print('CPU Time :',end_start/number*1000, 'ms') 
-    # exit()
+    # torch.set_num_threads(1)
+    # import timeit
+    # model.eval()
+    # number = 10
+    # end_start = timeit.timeit(stmt='model(x)', globals=globals(), number=number)
+    # print('CPU Time :',end_start/number*1000, 'ms') 
+    # # exit()
 
-    model.eval()
-    start = torch.cuda.Event(enable_timing=True)
-    end = torch.cuda.Event(enable_timing=True)
-    start.record()
-    embs = model(x)
-    end.record()
-    torch.cuda.synchronize()
-    print('GPU Time :',start.elapsed_time(end), 'ms')
-    # exit()
+    # model.eval()
+    # start = torch.cuda.Event(enable_timing=True)
+    # end = torch.cuda.Event(enable_timing=True)
+    # start.record()
+    # embs = model(x)
+    # end.record()
+    # torch.cuda.synchronize()
+    # print('GPU Time :',start.elapsed_time(end), 'ms')
+    # # exit()
 
     from fvcore.nn import FlopCountAnalysis
     model.eval()

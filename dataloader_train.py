@@ -50,7 +50,7 @@ def loadWAV(filename, max_frames=None):
         for asf in startframe:
             feats.append(audio[int(asf):int(asf)+max_audio])
 
-    feat = numpy.stack(feats,axis=0).astype(numpy.float)
+    feat = numpy.stack(feats,axis=0).astype(numpy.float64)
 
     return feat;
     
@@ -99,7 +99,7 @@ class AugmentWAV(object):
         rir_file    = random.choice(self.rir_files)
         
         rir, fs     = soundfile.read(rir_file)
-        rir         = numpy.expand_dims(rir.astype(numpy.float),0)
+        rir         = numpy.expand_dims(rir.astype(numpy.float64),0)
         rir         = rir / numpy.sqrt(numpy.sum(rir**2))
 
         return signal.convolve(audio, rir, mode='full')[:,:self.max_audio]
