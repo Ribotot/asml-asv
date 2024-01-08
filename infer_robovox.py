@@ -74,10 +74,15 @@ parser.add_argument('--channel',        type=int,   default=4,   choices=[0,1,2,
 # parser.add_argument('--dev_path',       type=str,   default="data/robovox_sp_cup_2024/trian",   help='Absolute path to the Robovox multichannel set')
 # parser.add_argument('--eval_path',      type=str,   default="data/robovox_sp_cup_2024/test",    help='Absolute path to the Robovox singlechannel set')
     ########## real example (Choi Jeong-Hwan) ########### 
-parser.add_argument('--dev_list',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/multi-channel/multi-channel-trials.trl",     help='VOiCES2019 dev trial list')
-parser.add_argument('--eval_list',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/single-channel/signle-channel-trials.trl",     help='VOiCES2019 eval trial list')
-parser.add_argument('--dev_path',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/multi-channel/",   help='Absolute path to the VOiCES2019 dev set')
-parser.add_argument('--eval_path',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/single-channel/", help='Absolute path to the VOiCES2019 eval set')
+# parser.add_argument('--dev_list',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/multi-channel/multi-channel-trials.trl",     help='VOiCES2019 dev trial list')
+# parser.add_argument('--eval_list',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/single-channel/signle-channel-trials.trl",     help='VOiCES2019 eval trial list')
+# parser.add_argument('--dev_path',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/multi-channel/",   help='Absolute path to the VOiCES2019 dev set')
+# parser.add_argument('--eval_path',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/single-channel/", help='Absolute path to the VOiCES2019 eval set')
+
+parser.add_argument('--dev_list',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/multi-channel/multi-channel-trials.trl",     help='VOiCES2019 dev trial list')
+parser.add_argument('--eval_list',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/single-channel/signle-channel-trials.trl",     help='VOiCES2019 eval trial list')
+parser.add_argument('--dev_path',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/multi-channel/",   help='Absolute path to the VOiCES2019 dev set')
+parser.add_argument('--eval_path',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/single-channel/", help='Absolute path to the VOiCES2019 eval set')
 
 
 ## Model definition

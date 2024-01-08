@@ -81,7 +81,7 @@ def loadWAV_multi2single(filename, channel=0, max_frames=None):
         for asf in startframe:
             feats.append(audio[int(asf):int(asf)+max_audio])
 
-    feat = numpy.stack(feats,axis=0).astype(numpy.float)
+    feat = numpy.stack(feats,axis=0).astype(numpy.float64)
 
     return feat;
 
@@ -112,7 +112,7 @@ def loadWAV_multi2single_rescale(filename, channel=0, resclae=True, max_frames=N
         for asf in startframe:
             feats.append(audio[int(asf):int(asf)+max_audio])
 
-    feat = numpy.stack(feats,axis=0).astype(numpy.float)
+    feat = numpy.stack(feats,axis=0).astype(numpy.float64)
     if resclae:
         max_value = max([numpy.max(feat, axis=1), numpy.min(feat, axis=1)*(-1)])
         if max_value < 0.5:
@@ -193,8 +193,8 @@ class test_dataset_loader_multichannel_robovox(Dataset):
             channel = self.enr_channel
         else:
             channel = self.te_channel
-        # audio = loadWAV_multi2single(os.path.join(path), channel)
-        audio = loadWAV_multi2single_rescale(os.path.join(path), channel)
+        audio = loadWAV_multi2single(os.path.join(path), channel)
+        # audio = loadWAV_multi2single_rescale(os.path.join(path), channel)
         return torch.FloatTensor(audio), self.test_list[index]
 
     def __len__(self):

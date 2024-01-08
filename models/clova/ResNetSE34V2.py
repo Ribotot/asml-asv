@@ -10,8 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
 from models.clova.ResNetBlocks import *
-from utils import PreEmphasis
-from models.custom.utils import FbankAug
+from models.custom.utils import FbankAug, PreEmphasis
 
 class ResNetSE(nn.Module):
     def __init__(self, block, layers, num_filters, nOut, encoder_type='SAP', n_mels=40, log_input=True, **kwargs):
