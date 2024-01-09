@@ -9,6 +9,12 @@ import torchaudio
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
+try:
+    import models
+except:
+    import os, sys
+    sys.path.append(os.getcwd())
+    
 from models.custom.utils import FbankAug
 
 class MainModel(nn.Module):

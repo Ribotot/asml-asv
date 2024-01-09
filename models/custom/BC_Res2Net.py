@@ -6,7 +6,12 @@ import torch
 import torchaudio
 import torch.nn as nn
 import torch.nn.functional as F
-
+try:
+    import models
+except:
+    import os, sys
+    sys.path.append(os.getcwd())
+    
 from models.custom.utils import FbankAug, PreEmphasis
 from models.asml.pooling import AttentiveDoubleStatsPooling
 from models.asml.bc2resnet.common import (ResNorm,

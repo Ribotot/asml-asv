@@ -6,6 +6,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchaudio
+try:
+    import models
+except:
+    import os, sys
+    sys.path.append(os.getcwd())
+
 from models.custom.utils import FbankAug, PreEmphasis
 
 class SEModule(nn.Module):

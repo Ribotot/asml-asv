@@ -2,6 +2,12 @@ import torch
 from torch import nn
 
 from torch.nn import functional as F
+try:
+    import models
+except:
+    import os, sys
+    sys.path.append(os.getcwd())
+    
 from models.asml.layers import Identity, Dense, Tdense, Conv1d, Conv2d, Unet2D_up, Unet2D_down, GraphAttentionLayer, GCN
 
 def l2_normalize(tensor, dim, eps=1e-12):

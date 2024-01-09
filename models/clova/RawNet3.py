@@ -3,7 +3,12 @@
 import torch
 import torch.nn as nn
 from asteroid_filterbanks import Encoder, ParamSincFB
-
+try:
+    import models
+except:
+    import os, sys
+    sys.path.append(os.getcwd())
+    
 from models.clova.RawNetBasicBlock import Bottle2neck, PreEmphasis
 
 

@@ -5,7 +5,12 @@
 import torch
 
 from torch import nn
-
+try:
+    import models
+except:
+    import os, sys
+    sys.path.append(os.getcwd())
+    
 from models.asml.bc2resnet.common import (ResNorm,
                                           Normalize,
                                           FreqAttnRes2NetUnit,
