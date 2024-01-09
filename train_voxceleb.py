@@ -91,6 +91,7 @@ parser.add_argument('--model',          type=str,   default="",     help='Name o
 parser.add_argument('--encoder_type',   type=str,   default="SAP",  help='Type of encoder')
 parser.add_argument('--nOut',           type=int,   default=512,    help='Embedding size in the last FC layer')
 parser.add_argument('--sinc_stride',    type=int,   default=10,    help='Stride size of the first analytic filterbank layer of RawNet3')
+parser.add_argument('--pretrained',    type=str,   default="",    help='Path to pretrained wavlm model')
 
 
 ## Distributed and mixed precision training

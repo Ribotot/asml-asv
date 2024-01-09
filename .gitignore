@@ -8,6 +8,7 @@ data
 data/
 exps/
 core.*
+hub 
 
 # NSML related
 .nsmlignore

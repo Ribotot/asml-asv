@@ -1,0 +1,14 @@
+model: custom.WavLM_ECAPATDNN512
+nOut: 192
+max_frames: 200
+batch_size: 2 #256
+weight_decay: 2e-5
+trainfunc: clova.aamsoftmax
+scheduler: onecyclelr
+n_mels: 100
+log_input: True
+max_seg_per_spk: 500
+augment_noise: True
+augment_specaug: True
+pretrained: /home/js-gpu2-01/workspace/SR/asml-asv/hubs/WavLM-Base+.pt
+save_path: exps/WavLM_ECAPATDNN512
