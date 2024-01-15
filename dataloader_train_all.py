@@ -65,6 +65,7 @@ class AugmentWAV(object):
 
         self.noisesnr   = {'noise':[-3,15]}
         self.numnoise   = {'noise':[1,1]}
+        self.clip_prob  = [5, 10]
         self.noiselist  = {}
 
         augment_files   = glob.glob(os.path.join(musan_path,'*/*/*/*.wav'));
@@ -79,6 +80,9 @@ class AugmentWAV(object):
             self.noiselist['noise'].append(file)
 
         self.rir_files  = glob.glob(os.path.join(rir_path,'*/*/*.wav'));
+
+        self.aug_frame = 60
+        self.aug_len = self.aug_frame*160
 
     def additive_large_noise(self, noisecat, audio, start):
 
@@ -297,7 +301,7 @@ class train_dataset_loader(Dataset):
             
             if self.augment_noise:
                 augtype = random.random()
-                start = random.randint(1, 15999) #self.aug_len
+                start = random.randint(1, 9599) #self.aug_len
                 if augtype > 0.8:
                     audio   = self.augment_wav.reverberate(audio)
                     audio   = self.augment_wav.additive_large_noise('noise',audio,start)
