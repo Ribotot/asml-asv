@@ -74,15 +74,15 @@ parser.add_argument('--channel',        type=int,   default=4,   choices=[0,1,2,
 # parser.add_argument('--dev_path',       type=str,   default="data/robovox_sp_cup_2024/trian",   help='Absolute path to the Robovox multichannel set')
 # parser.add_argument('--eval_path',      type=str,   default="data/robovox_sp_cup_2024/test",    help='Absolute path to the Robovox singlechannel set')
     ########## real example (Choi Jeong-Hwan) ########### 
-# parser.add_argument('--dev_list',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/multi-channel/multi-channel-trials.trl",     help='VOiCES2019 dev trial list')
-# parser.add_argument('--eval_list',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/single-channel/signle-channel-trials.trl",     help='VOiCES2019 eval trial list')
-# parser.add_argument('--dev_path',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/multi-channel/",   help='Absolute path to the VOiCES2019 dev set')
-# parser.add_argument('--eval_path',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/single-channel/", help='Absolute path to the VOiCES2019 eval set')
+parser.add_argument('--dev_list',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/multi-channel/multi-channel-trials.trl",     help='VOiCES2019 dev trial list')
+parser.add_argument('--eval_list',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/single-channel/signle-channel-trials.trl",     help='VOiCES2019 eval trial list')
+parser.add_argument('--dev_path',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/multi-channel/",   help='Absolute path to the VOiCES2019 dev set')
+parser.add_argument('--eval_path',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/single-channel/", help='Absolute path to the VOiCES2019 eval set')
 
-parser.add_argument('--dev_list',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/multi-channel/multi-channel-trials.trl",     help='VOiCES2019 dev trial list')
-parser.add_argument('--eval_list',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/single-channel/signle-channel-trials.trl",     help='VOiCES2019 eval trial list')
-parser.add_argument('--dev_path',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/multi-channel/",   help='Absolute path to the VOiCES2019 dev set')
-parser.add_argument('--eval_path',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/single-channel/", help='Absolute path to the VOiCES2019 eval set')
+# parser.add_argument('--dev_list',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/multi-channel/multi-channel-trials.trl",     help='VOiCES2019 dev trial list')
+# parser.add_argument('--eval_list',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/single-channel/signle-channel-trials.trl",     help='VOiCES2019 eval trial list')
+# parser.add_argument('--dev_path',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/multi-channel/",   help='Absolute path to the VOiCES2019 dev set')
+# parser.add_argument('--eval_path',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/single-channel/", help='Absolute path to the VOiCES2019 eval set')
 
 
 ## Model definition
@@ -196,14 +196,15 @@ def main_worker(gpu, ngpus_per_node, args):
     day_mindcf, day_threshold = ComputeMinDcf(fnrs, fprs, thresholds, 0.01, 10, 100)
     night_mindcf, night_threshold = ComputeMinDcf(fnrs, fprs, thresholds, 0.8, 1, 20)
 
+    comp_dcf = 0.5*day_mindcf + 0.5*night_mindcf
     final_save_path = args.result_save_path+"/Epoch"+str(args.epoch)+trial_type
     os.makedirs(final_save_path, exist_ok=True)
     scorefile   = open(final_save_path+"/results.txt", "a+")
 
     print('\n',time.strftime("%Y-%m-%d %H:%M:%S"), "Epoch {:d}".format(args.epoch), \
         "VEER {:2.4f}".format(result[1]), "MinDCF[{:2.3f}]".format(args.dcf_p_target) ,"{:2.5f}".format(mindcf), \
-        "MinDCF_Day", "{:2.5f}".format(day_mindcf), "MinDCF_Night", "{:2.5f}".format(night_mindcf))
-    scorefile.write("Epoch {:d}, VEER {:2.4f}, MinDCF[{:2.3f}] {:2.5f}, MinDCF_Day {:2.5f}, MinDCF_Night {:2.5f}\n".format(args.epoch, result[1], args.dcf_p_target, mindcf, day_mindcf, night_mindcf))
+        "MinDCF_Day", "{:2.5f}".format(day_mindcf), "MinDCF_Night", "{:2.5f}".format(night_mindcf), "DCF_Challenge", "{:2.5f}".format(comp_dcf))
+    scorefile.write("Epoch {:d}, VEER {:2.4f}, MinDCF[{:2.3f}] {:2.5f}, MinDCF_Day {:2.5f}, MinDCF_Night {:2.5f}, DCF_Challenge {:2.5f}\n".format(args.epoch, result[1], args.dcf_p_target, mindcf, day_mindcf, night_mindcf, comp_dcf))
     scorefile.close()
 
     tri_resultfile = open(final_save_path+"/trial_result.txt", "w+")

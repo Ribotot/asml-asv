@@ -56,15 +56,15 @@ def loadWAV(filename, max_frames=None):
     
 class AugmentWAV(object):
 
-    def __init__(self, musan_path, rir_path, max_frames):
+    def __init__(self, musan_path, sample_noise_path, rir_path, max_frames):
 
         self.max_frames = max_frames
         self.max_audio  = max_audio = max_frames * 160 + 240
 
-        self.noisetypes = ['noise','speech','music']
+        self.noisetypes = ['noise']
 
-        self.noisesnr   = {'noise':[0,15],'speech':[13,20],'music':[5,15]}
-        self.numnoise   = {'noise':[1,1], 'speech':[3,7],  'music':[1,1] }
+        self.noisesnr   = {'noise':[-3,15]}
+        self.numnoise   = {'noise':[1,1]}
         self.noiselist  = {}
 
         augment_files   = glob.glob(os.path.join(musan_path,'*/*/*/*.wav'));
@@ -74,9 +74,13 @@ class AugmentWAV(object):
                 self.noiselist[file.split('/')[-4]] = []
             self.noiselist[file.split('/')[-4]].append(file)
 
+        sample_files   = glob.glob(os.path.join(sample_noise_path,'*.wav'));
+        for file in sample_files:
+            self.noiselist['noise'].append(file)
+
         self.rir_files  = glob.glob(os.path.join(rir_path,'*/*/*.wav'));
 
-    def additive_noise(self, noisecat, audio):
+    def additive_large_noise(self, noisecat, audio, start):
 
         clean_db = 10 * numpy.log10(numpy.mean(audio ** 2)+1e-4) 
 
@@ -87,10 +91,33 @@ class AugmentWAV(object):
 
         for noise in noiselist:
 
-            noiseaudio  = loadWAV(noise, self.max_frames)
+            noiseaudio  = loadWAV(noise, self.max_frames+self.aug_frame)
             noise_snr   = random.uniform(self.noisesnr[noisecat][0],self.noisesnr[noisecat][1])
             noise_db = 10 * numpy.log10(numpy.mean(noiseaudio[0] ** 2)+1e-4) 
             noises.append(numpy.sqrt(10 ** ((clean_db - noise_db - noise_snr) / 10)) * noiseaudio)
+            
+        audio = numpy.pad(audio, ((0, 0), (start, self.aug_len-start)), 'constant', constant_values=((0, 0), (0, 0)))
+
+        return numpy.sum(numpy.concatenate(noises,axis=0),axis=0,keepdims=True) + audio
+
+    def additive_small_noise(self, noisecat, audio, start):
+
+        clean_db = 10 * numpy.log10(numpy.mean(audio ** 2)+1e-4) 
+
+        numnoise    = [1, 3]
+        noisesnr    = [15, 25]
+        noiselist   = random.sample(self.noiselist[noisecat], random.randint(numnoise[0],numnoise[1]))
+
+        noises = []
+
+        for noise in noiselist:
+
+            noiseaudio  = loadWAV(noise, self.max_frames+self.aug_frame)
+            noise_snr   = random.uniform(noisesnr[0],noisesnr[1])
+            noise_db = 10 * numpy.log10(numpy.mean(noiseaudio[0] ** 2)+1e-4) 
+            noises.append(numpy.sqrt(10 ** ((clean_db - noise_db - noise_snr) / 10)) * noiseaudio)
+            
+        audio = numpy.pad(audio, ((0, 0), (start, self.aug_len-start)), 'constant', constant_values=((0, 0), (0, 0)))
 
         return numpy.sum(numpy.concatenate(noises,axis=0),axis=0,keepdims=True) + audio
 
@@ -103,6 +130,15 @@ class AugmentWAV(object):
         rir         = rir / numpy.sqrt(numpy.sum(rir**2))
 
         return signal.convolve(audio, rir, mode='full')[:,:self.max_audio]
+
+
+    def audio_clip(self, audio):
+
+        # audio_topk = int(random.uniform(self.clip_prob[0],self.clip_prob[1])/100 * self.max_audio)
+        # topk_value  = numpy.min(numpy.partition(numpy.abs(audio), -audio_topk)[:,-audio_topk:])
+        topk_value = (1 - random.uniform(self.clip_prob[0],self.clip_prob[1])/100)*numpy.max(numpy.abs(audio))
+
+        return numpy.clip(audio, -topk_value, topk_value)
 
 
 def make_voxceleb_train_dict(voxceleb_train_list, voxceleb_train_path):
@@ -142,22 +178,46 @@ def make_sdsv_train_dict(sdsv_train_path, sdsv_utt2spk_list):
     return train_dict
 
 def make_cnceleb_train_dict(cnceleb_train_path):
-    files = glob.glob(os.path.join(cnceleb_train_path,'*/*/*.flac'));
+    files = glob.glob(os.path.join(cnceleb_train_path,'*/*.flac'));
     train_dict = {}
     for x in files:
         spk = x.strip().split('/')[-2]
         train_dict[x] = spk    
     return train_dict
 
+def make_french_mls_train_dict(fre_mls_path):
+    files = glob.glob(os.path.join(fre_mls_path,'*/*/*.flac'));
+    train_dict = {}
+    for x in files:
+        spk = x.strip().split('/')[-2]
+        train_dict[x] = spk    
+    return train_dict
+
+def make_french_tedx_train_dict(fre_tedx_path):
+    files = glob.glob(os.path.join(fre_tedx_path,'*/*/*/*.flac'));
+    train_dict = {}
+    for x in files:
+        spk = x.strip().split('/')[-2]
+        train_dict[x] = spk    
+    return train_dict
+
+def make_robovox_sample_train_dict(robovox_sample_path):
+    files = glob.glob(os.path.join(robovox_sample_path,'*/*.flac'));
+    train_dict = {}
+    for x in files:
+        spk = x.strip().split('/')[-2]
+        train_dict[x] = spk    
+    return train_dict
 
 class train_dataset_loader(Dataset):
-    def __init__(self, voxceleb_train_dict, sdsv_train_dict, cnceleb_train_dict, \
-        augment_noise, musan_path, rir_path, max_frames, train_path, **kwargs):
+    def __init__(self, voxceleb_train_dict, sdsv_train_dict, cnceleb_train_dict, french_mls_train_dict, french_tedx_train_dict, sample_train_dict, \
+        augment_noise, musan_path, robovox_noise_path, rir_path, max_frames, train_path, **kwargs):
 
-        self.augment_wav = AugmentWAV(musan_path=musan_path, rir_path=rir_path, max_frames = max_frames)
+        self.augment_wav = AugmentWAV(musan_path=musan_path, sample_noise_path=robovox_noise_path, rir_path=rir_path, max_frames = max_frames)
 
         self.max_frames = max_frames;
         self.musan_path = musan_path
+        self.sample_noise_path = robovox_noise_path
         self.rir_path   = rir_path
         self.augment_noise    = augment_noise
         
@@ -195,6 +255,36 @@ class train_dataset_loader(Dataset):
             self.data_label.append(cnceleb_spk_dict[spk])
         spk_bias += len(cnceleb_spks)
 
+        french_mls_spks = list(set(french_mls_train_dict.values()))
+        french_mls_spks.sort()
+        french_mls_spk_dict = {}
+        for lidx, spk_lab in enumerate(french_mls_spks):
+            french_mls_spk_dict[spk_lab] = lidx + spk_bias
+        for filename, spk in french_mls_train_dict.items():
+            self.data_list.append(filename)
+            self.data_label.append(french_mls_spk_dict[spk])
+        spk_bias += len(french_mls_spks)
+
+        french_tedx_spks = list(set(french_tedx_train_dict.values()))
+        french_tedx_spks.sort()
+        french_tedx_spk_dict = {}
+        for lidx, spk_lab in enumerate(french_tedx_spks):
+            french_tedx_spk_dict[spk_lab] = lidx + spk_bias
+        for filename, spk in french_tedx_train_dict.items():
+            self.data_list.append(filename)
+            self.data_label.append(french_tedx_spk_dict[spk])
+        spk_bias += len(french_tedx_spks)
+
+        sample_spks = list(set(sample_train_dict.values()))
+        sample_spks.sort()
+        sample_spk_dict = {}
+        for lidx, spk_lab in enumerate(sample_spks):
+            sample_spk_dict[spk_lab] = lidx + spk_bias
+        for filename, spk in sample_train_dict.items():
+            self.data_list.append(filename)
+            self.data_label.append(sample_spk_dict[spk])
+        spk_bias += len(sample_spks)
+
         self.num_label = spk_bias
 
     def __getitem__(self, indices):
@@ -206,17 +296,24 @@ class train_dataset_loader(Dataset):
             audio = loadWAV(self.data_list[index], self.max_frames)
             
             if self.augment_noise:
-                RIR_augtype = random.random()    
-                if RIR_augtype > 0.5:
+                augtype = random.random()
+                start = random.randint(1, 15999) #self.aug_len
+                if augtype > 0.8:
                     audio   = self.augment_wav.reverberate(audio)
-
-                Noise_augtype = random.random()
-                if Noise_augtype > 0.85:
-                    audio   = self.augment_wav.additive_noise('music',audio)
-                elif Noise_augtype > 0.7:
-                    audio   = self.augment_wav.additive_noise('speech',audio)
-                elif Noise_augtype > 0.5:
-                    audio   = self.augment_wav.additive_noise('noise',audio)
+                    audio   = self.augment_wav.additive_large_noise('noise',audio,start)
+                elif augtype > 0.6:
+                    audio   = self.augment_wav.reverberate(audio)
+                    audio   = self.augment_wav.additive_small_noise('noise',audio,start)
+                elif augtype > 0.5:
+                    audio   = self.augment_wav.audio_clip(audio)
+                    audio   = self.augment_wav.additive_large_noise('noise',audio,start)
+                elif augtype > 0.3:
+                    audio   = self.augment_wav.audio_clip(audio)
+                    audio   = self.augment_wav.additive_small_noise('noise',audio,start)
+                elif augtype > 0.1:
+                    audio   = self.augment_wav.additive_large_noise('noise',audio,start)
+                else:
+                    audio   = self.augment_wav.additive_small_noise('noise',audio,start)
                 
 
             feat.append(audio);

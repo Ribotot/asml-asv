@@ -10,7 +10,7 @@ import zipfile
 import warnings
 import datetime
 from tuneThreshold import *
-from Trainer import *
+from Trainer_all import *
 from dataloader_train_all import *
 from utils import *
 from SpeakerNet import WrappedModel, SpeakerNet
@@ -85,17 +85,24 @@ parser.add_argument('--rir_path',          type=str,   default="/media/jh2/f22b5
 
 parser.add_argument('--sdsv_train_path',        type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/SDSV21_challenge",           help='')
 parser.add_argument('--sdsv_utt2spk_list',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/SDSV21_challenge/docs/train_labels.txt",          help='')
-parser.add_argument('--cnceleb_train_path',     type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/CN-Celeb_flac",           help='')
+parser.add_argument('--cnceleb_train_path',     type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/CN-Celeb_flac/data",           help='')
+
+parser.add_argument('--fre_mls_path',           type=str,   default="/home/jh2/Workspace/DB/mls_french_prep",           help='')
+parser.add_argument('--fre_tedx_path',          type=str,   default="/home/jh2/Workspace/DB/mtedx_fr_preproc_data",     help='')
+parser.add_argument('--robovox_sample_path',    type=str,   default="/home/jh2/Workspace/DB/robovox_sample/speaker",            help='')
+parser.add_argument('--robovox_noise_path',     type=str,   default="/home/jh2/Workspace/DB/robovox_sample/noise",              help='')
 
 
 ## Model definition
 parser.add_argument('--n_mels',         type=int,   default=40,     help='Number of mel filterbanks')
-parser.add_argument('--log_input',      type=bool,  default=True,  help='Log input features')
+parser.add_argument('--log_input',      type=bool,  default=True,   help='Log input features')
 parser.add_argument('--model',          type=str,   default="",     help='Name of model definition')
 parser.add_argument('--encoder_type',   type=str,   default="SAP",  help='Type of encoder')
 parser.add_argument('--nOut',           type=int,   default=512,    help='Embedding size in the last FC layer')
-parser.add_argument('--sinc_stride',    type=int,   default=10,    help='Stride size of the first analytic filterbank layer of RawNet3')
-parser.add_argument('--gpu_id',         type=str,   default="0",    help='Select GPU')
+parser.add_argument('--sinc_stride',    type=int,   default=10,     help='Stride size of the first analytic filterbank layer of RawNet3')
+parser.add_argument('--main_gpu_id',    type=str,   default='0',    help='Select main GPU "0"')
+parser.add_argument('--gpus',           type=str,   default="0,1",  help='Select GPUs "0,1"')
+
 
 ## Distributed and mixed precision training
 parser.add_argument('--port',           type=str,   default="8888", help='Port for distributed training, input as text')
@@ -128,6 +135,7 @@ if args.config is not None:
 
 def main_worker(gpu, ngpus_per_node, args):
 
+    args.gpu = gpu
 
     ## Load models
     s = SpeakerNet(**vars(args))
@@ -151,9 +159,7 @@ def main_worker(gpu, ngpus_per_node, args):
     it = 1
     eers = [100]
 
-    args.gpu = args.gpu_id
-
-    if args.gpu == args.gpu_id:
+    if args.gpu == args.main_gpu_id:
         ## Write args to scorefile
         scorefile   = open(args.result_save_path+"/scores.txt", "a+")
         dict2scp(args.result_save_path+"/args.scp", vars(args))
@@ -163,9 +169,15 @@ def main_worker(gpu, ngpus_per_node, args):
     vox_train_dict = make_voxceleb_train_dict(args.train_list, args.train_path)
     sdsv_train_dict = make_sdsv_train_dict(args.sdsv_train_path, args.sdsv_utt2spk_list)
     cn_train_dict = make_cnceleb_train_dict(args.cnceleb_train_path)
+    fre_mls_train_dict = make_french_mls_train_dict(args.fre_mls_path)
+    fre_tedx_train_dict = make_french_tedx_train_dict(args.fre_tedx_path)
+    sample_train_dict = make_robovox_sample_train_dict(args.robovox_sample_path)
 
-    train_dataset = train_dataset_loader(vox_train_dict, sdsv_train_dict, cn_train_dict, **vars(args))
+
+    train_dataset = train_dataset_loader(vox_train_dict, sdsv_train_dict, cn_train_dict, fre_mls_train_dict, \
+                                        fre_tedx_train_dict, sample_train_dict, **vars(args))
     print('#Class :',train_dataset.num_label)
+    assert train_dataset.num_label == args.nClasses
 
     train_sampler = train_dataset_sampler(train_dataset, **vars(args))
 
@@ -204,7 +216,7 @@ def main_worker(gpu, ngpus_per_node, args):
         trainer.__scheduler__.step()
 
     ## Save training code and params
-    if args.gpu == args.gpu_id:
+    if args.gpu == args.main_gpu_id:
         pyfiles = glob.glob('./*.py')
         strtime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
@@ -223,9 +235,9 @@ def main_worker(gpu, ngpus_per_node, args):
 
         clr = [x['lr'] for x in trainer.__optimizer__.param_groups]
 
-        loss, traineer = trainer.train_network(train_loader, verbose=(args.gpu == args.gpu_id))
+        loss, traineer = trainer.train_network(train_loader, verbose=(args.gpu == args.main_gpu_id))
 
-        if args.gpu == args.gpu_id:
+        if args.gpu == args.main_gpu_id:
             print('\n',time.strftime("%Y-%m-%d %H:%M:%S"), "Epoch {:d}, TEER/TAcc {:2.2f}, TLOSS {:f}, LR {:f}".format(it, traineer, loss, max(clr)))
             scorefile.write("Epoch {:d}, TEER/TAcc {:2.2f}, TLOSS {:f}, LR {:f} \n".format(it, traineer, loss, max(clr)))
 
@@ -233,7 +245,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
             sc, lab, _ = trainer.evaluateFromList(**vars(args))
 
-            if args.gpu == args.gpu_id:
+            if args.gpu == args.main_gpu_id:
                 
                 result = tuneThresholdfromScore(sc, lab, [1, 0.1])
 
@@ -252,7 +264,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
                 scorefile.flush()
 
-    if args.gpu == args.gpu_id:
+    if args.gpu == args.main_gpu_id:
         scorefile.close()
 
 
@@ -268,8 +280,8 @@ def main():
     os.makedirs(args.model_save_path, exist_ok=True)
     os.makedirs(args.result_save_path, exist_ok=True)
 
-    # n_gpus = torch.cuda.device_count()
-    os.environ["CUDA_VISIBLE_DEVICES"]=args.gpu_id
+    os.environ["CUDA_VISIBLE_DEVICES"]=args.gpus
+    n_gpus = torch.cuda.device_count()
 
     print('Python Version:', sys.version)
     print('PyTorch Version:', torch.__version__)
@@ -279,7 +291,7 @@ def main():
     if args.distributed:
         mp.spawn(main_worker, nprocs=n_gpus, args=(n_gpus, args))
     else:
-        main_worker(0, None, args)
+        main_worker(args.main_gpu_id, None, args)
 
 
 if __name__ == '__main__':

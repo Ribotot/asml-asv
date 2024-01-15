@@ -105,7 +105,6 @@ class Local_FE_Block(nn.Module):
         super(Local_FE_Block, self).__init__()
 
         self.conv1  = nn.Conv2d(inplanes, inplanes, kernel_size=(3, 3), stride=stride, padding=(1, 1))
-        # self.conv1  = nn.Conv2d(inplanes, inplanes, kernel_size=(1, 1), stride=stride)
         self.bn1    = nn.BatchNorm2d(inplanes)
         num_pad = (math.floor(kernel_size[0]/2), math.floor(kernel_size[1]/2))
         self.conv2  = nn.Conv2d(inplanes, inplanes, kernel_size=kernel_size, padding=num_pad, groups=inplanes)
