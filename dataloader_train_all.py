@@ -76,6 +76,7 @@ class AugmentWAV(object):
             self.noiselist[file.split('/')[-4]].append(file)
 
         sample_files   = glob.glob(os.path.join(sample_noise_path,'*.wav'));
+
         for file in sample_files:
             self.noiselist['noise'].append(file)
 
@@ -122,6 +123,24 @@ class AugmentWAV(object):
             noises.append(numpy.sqrt(10 ** ((clean_db - noise_db - noise_snr) / 10)) * noiseaudio)
             
         audio = numpy.pad(audio, ((0, 0), (start, self.aug_len-start)), 'constant', constant_values=((0, 0), (0, 0)))
+
+        return numpy.sum(numpy.concatenate(noises,axis=0),axis=0,keepdims=True) + audio
+
+    def additive_noise(self, noisecat, audio):
+
+        clean_db = 10 * numpy.log10(numpy.mean(audio ** 2)+1e-4) 
+
+        numnoise    = self.numnoise[noisecat]
+        noiselist   = random.sample(self.noiselist[noisecat], random.randint(numnoise[0],numnoise[1]))
+
+        noises = []
+
+        for noise in noiselist:
+
+            noiseaudio  = loadWAV(noise, self.max_frames)
+            noise_snr   = random.uniform(self.noisesnr[noisecat][0],self.noisesnr[noisecat][1])
+            noise_db = 10 * numpy.log10(numpy.mean(noiseaudio[0] ** 2)+1e-4) 
+            noises.append(numpy.sqrt(10 ** ((clean_db - noise_db - noise_snr) / 10)) * noiseaudio)
 
         return numpy.sum(numpy.concatenate(noises,axis=0),axis=0,keepdims=True) + audio
 
@@ -198,7 +217,7 @@ def make_french_mls_train_dict(fre_mls_path):
     return train_dict
 
 def make_french_tedx_train_dict(fre_tedx_path):
-    files = glob.glob(os.path.join(fre_tedx_path,'*/*/*/*.flac'));
+    files = glob.glob(os.path.join(fre_tedx_path,'*/*/*.flac'));
     train_dict = {}
     for x in files:
         spk = x.strip().split('/')[-2]
@@ -206,7 +225,7 @@ def make_french_tedx_train_dict(fre_tedx_path):
     return train_dict
 
 def make_robovox_sample_train_dict(robovox_sample_path):
-    files = glob.glob(os.path.join(robovox_sample_path,'*/*.flac'));
+    files = glob.glob(os.path.join(robovox_sample_path,'*/*.wav'));
     train_dict = {}
     for x in files:
         spk = x.strip().split('/')[-2]
@@ -237,7 +256,8 @@ class train_dataset_loader(Dataset):
         for filename, spk in voxceleb_train_dict.items():
             self.data_list.append(filename)
             self.data_label.append(voxceleb_spk_dict[spk])
-        spk_bias += len(voxceleb_spks) 
+        spk_bias += len(voxceleb_spks)
+        print('VoxCeleb2 Speaker : ',len(voxceleb_spks))
 
         sdsv_spks = list(set(sdsv_train_dict.values()))
         sdsv_spks.sort()
@@ -248,6 +268,7 @@ class train_dataset_loader(Dataset):
             self.data_list.append(filename)
             self.data_label.append(sdsv_spk_dict[spk])     
         spk_bias += len(sdsv_spks)
+        print('SDSV2020 task2 Speaker : ',len(sdsv_spks))
 
         cnceleb_spks = list(set(cnceleb_train_dict.values()))
         cnceleb_spks.sort()
@@ -258,6 +279,7 @@ class train_dataset_loader(Dataset):
             self.data_list.append(filename)
             self.data_label.append(cnceleb_spk_dict[spk])
         spk_bias += len(cnceleb_spks)
+        print('CN-Celeb1 Speaker : ',len(cnceleb_spks))
 
         french_mls_spks = list(set(french_mls_train_dict.values()))
         french_mls_spks.sort()
@@ -268,6 +290,7 @@ class train_dataset_loader(Dataset):
             self.data_list.append(filename)
             self.data_label.append(french_mls_spk_dict[spk])
         spk_bias += len(french_mls_spks)
+        print('Multilingual LibriSpeech (French) Speaker : ',len(french_mls_spks))
 
         french_tedx_spks = list(set(french_tedx_train_dict.values()))
         french_tedx_spks.sort()
@@ -278,6 +301,7 @@ class train_dataset_loader(Dataset):
             self.data_list.append(filename)
             self.data_label.append(french_tedx_spk_dict[spk])
         spk_bias += len(french_tedx_spks)
+        print('Multilingual TEDx (French) Speaker : ',len(french_tedx_spks))
 
         sample_spks = list(set(sample_train_dict.values()))
         sample_spks.sort()
@@ -288,6 +312,8 @@ class train_dataset_loader(Dataset):
             self.data_list.append(filename)
             self.data_label.append(sample_spk_dict[spk])
         spk_bias += len(sample_spks)
+        print('ROBOVOX Sample Speaker : ',len(sample_spks))
+        print('Total Speaker :',spk_bias)
 
         self.num_label = spk_bias
 
@@ -317,8 +343,7 @@ class train_dataset_loader(Dataset):
                 elif augtype > 0.1:
                     audio   = self.augment_wav.additive_large_noise('noise',audio,start)
                 else:
-                    audio   = self.augment_wav.additive_small_noise('noise',audio,start)
-                
+                    audio   = self.augment_wav.additive_small_noise('noise',audio,start)                            
 
             feat.append(audio);
 
