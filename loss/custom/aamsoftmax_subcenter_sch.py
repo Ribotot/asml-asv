@@ -9,21 +9,21 @@ import time, pdb, numpy, math
 from utils import accuracy
 
 class LossFunction(nn.Module):
-    def __init__(self, nOut, nClasses, margin=0.2, scale=30, center=3, topk=5, submargin=0.06, epoch=40, **kwargs):
+    def __init__(self, nOut, nClasses, margin=0.2, scale=30, center=1, topk=5, submargin=0.06, epoch=20, **kwargs):
         super(LossFunction, self).__init__()
 
         self.test_normalize = True
         
-        init_m = 0.0
-        init_sub_m = 0.0
+        init_m = 0.2
+        init_sub_m = 0.06
         self.m = init_m
-        self.sub_m = init_sub_m
+        self.sub_m = -init_sub_m
 
         self.final_m = margin
-        self.final_sub_m = submargin
+        self.final_sub_m = -submargin
 
-        self.epoch_per_m = self.final_m/epoch
-        self.epoch_per_sub_m = self.final_sub_m/epoch
+        self.epoch_per_m = (self.final_m-self.m)/epoch
+        self.epoch_per_sub_m = (self.final_sub_m-self.sub_m)/epoch
 
         self.s = scale
         self.topk = topk
@@ -34,7 +34,7 @@ class LossFunction(nn.Module):
 
         self.calculate_cos()
 
-        print('Initialised %d Subcenter AAMSoftmax margin %.3f scale %.3f with %d topk and %.3f submargin '%(center, self.m, self.s, self.topk, self.sub_m))
+        print('Initialised %d Subcenter AAMSoftmax margin %.3f scale %.3f with %d topk and %.3f submargin '%(center, self.m, self.s, self.topk, -self.sub_m))
     
     def calculate_cos(self):
         self.cos_m = math.cos(self.m)
@@ -61,7 +61,7 @@ class LossFunction(nn.Module):
 
         self.sub_m += self.epoch_per_sub_m
 
-        if self.sub_m > self.final_sub_m:
+        if self.sub_m < self.final_sub_m:
             self.sub_m = self.final_sub_m
         else:
             print('\nUpdate submargin to %.4f'%(self.sub_m))
@@ -84,8 +84,7 @@ class LossFunction(nn.Module):
         phi = torch.where((cosine - self.th) > 0, phi, cosine - self.mm)
 
         sub_phi = cosine * self.sub_cos_m - sine * self.sub_sin_m
-        sub_phi = torch.where((cosine - self.sub_th) > 0, sub_phi, cosine + self.sub_mm)
-
+        sub_phi = torch.where((cosine - self.sub_th) > 0, sub_phi, cosine - self.sub_mm)
 
         one_hot_sub = torch.zeros_like(cosine)
         _, indecies = torch.topk(cosine, self.topk+1)
@@ -98,7 +97,6 @@ class LossFunction(nn.Module):
                 fix_indecies.append(index.unsqueeze(dim=0))
             else:
                 index = index[:-1]
-                # print(index, index.size())
                 fix_indecies.append(index.unsqueeze(dim=0))
         indecies = torch.cat(fix_indecies, dim=0)
 

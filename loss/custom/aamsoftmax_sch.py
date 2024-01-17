@@ -9,7 +9,7 @@ import time, pdb, numpy, math
 from utils import accuracy
 
 class LossFunction(nn.Module):
-    def __init__(self, nOut, nClasses, margin=0.2, scale=30, epoch=40, easy_margin=False, **kwargs):
+    def __init__(self, nOut, nClasses, margin=0.2, scale=30, epoch=20, easy_margin=False, **kwargs):
         super(LossFunction, self).__init__()
 
         self.test_normalize = True
@@ -18,7 +18,7 @@ class LossFunction(nn.Module):
         self.m = init_m
 
         self.final_m = margin
-        self.epoch_per_m = self.final_m/epoch
+        self.epoch_per_m = (self.final_m-self.m)/epoch
         self.s = scale
         self.nOut = nOut
         self.weight = torch.nn.Parameter(torch.FloatTensor(nClasses, nOut), requires_grad=True)
