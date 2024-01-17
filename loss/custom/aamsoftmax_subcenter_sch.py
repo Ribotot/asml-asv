@@ -9,7 +9,7 @@ import time, pdb, numpy, math
 from utils import accuracy
 
 class LossFunction(nn.Module):
-    def __init__(self, nOut, nClasses, margin=0.2, scale=30, center=1, topk=5, submargin=0.06, epoch=20, **kwargs):
+    def __init__(self, nOut, nClasses, margin=0.2, scale=30, center=3, topk=5, submargin=0.06, epoch=20, **kwargs):
         super(LossFunction, self).__init__()
 
         self.test_normalize = True
