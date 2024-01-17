@@ -14,8 +14,8 @@ class LossFunction(nn.Module):
 
         self.test_normalize = True
         
-        init_m = 0.2
-        init_sub_m = 0.06
+        init_m = 0.0
+        init_sub_m = 0.0
         self.m = init_m
         self.sub_m = -init_sub_m
 
