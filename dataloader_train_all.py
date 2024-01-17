@@ -257,7 +257,8 @@ class train_dataset_loader(Dataset):
             self.data_list.append(filename)
             self.data_label.append(voxceleb_spk_dict[spk])
         spk_bias += len(voxceleb_spks)
-        print('VoxCeleb2 Speaker : ',len(voxceleb_spks))
+        print('VoxCeleb2 Speakers : ',len(voxceleb_spks))
+        print('VoxCeleb2 Utterances :', len(voxceleb_train_dict.keys()))
 
         sdsv_spks = list(set(sdsv_train_dict.values()))
         sdsv_spks.sort()
@@ -268,7 +269,8 @@ class train_dataset_loader(Dataset):
             self.data_list.append(filename)
             self.data_label.append(sdsv_spk_dict[spk])     
         spk_bias += len(sdsv_spks)
-        print('SDSV2020 task2 Speaker : ',len(sdsv_spks))
+        print('SDSV2020 task2 Speakers : ',len(sdsv_spks))
+        print('SDSV2020 task2 Utterances :',len(sdsv_train_dict.keys()))
 
         cnceleb_spks = list(set(cnceleb_train_dict.values()))
         cnceleb_spks.sort()
@@ -279,7 +281,8 @@ class train_dataset_loader(Dataset):
             self.data_list.append(filename)
             self.data_label.append(cnceleb_spk_dict[spk])
         spk_bias += len(cnceleb_spks)
-        print('CN-Celeb1 Speaker : ',len(cnceleb_spks))
+        print('CN-Celeb1 Speakers : ',len(cnceleb_spks))
+        print('CN-Celeb1 Utterances :',len(cnceleb_train_dict.keys()))
 
         french_mls_spks = list(set(french_mls_train_dict.values()))
         french_mls_spks.sort()
@@ -290,7 +293,8 @@ class train_dataset_loader(Dataset):
             self.data_list.append(filename)
             self.data_label.append(french_mls_spk_dict[spk])
         spk_bias += len(french_mls_spks)
-        print('Multilingual LibriSpeech (French) Speaker : ',len(french_mls_spks))
+        print('Multilingual LibriSpeech (French) Speakers : ',len(french_mls_spks))
+        print('Multilingual LibriSpeech (French) Utterances :',len(french_mls_train_dict.keys()))
 
         french_tedx_spks = list(set(french_tedx_train_dict.values()))
         french_tedx_spks.sort()
@@ -301,7 +305,8 @@ class train_dataset_loader(Dataset):
             self.data_list.append(filename)
             self.data_label.append(french_tedx_spk_dict[spk])
         spk_bias += len(french_tedx_spks)
-        print('Multilingual TEDx (French) Speaker : ',len(french_tedx_spks))
+        print('Multilingual TEDx (French) Speakers : ',len(french_tedx_spks))
+        print('Multilingual TEDx (French) Utterances :',len(french_tedx_train_dict.keys()))
 
         sample_spks = list(set(sample_train_dict.values()))
         sample_spks.sort()
@@ -312,8 +317,10 @@ class train_dataset_loader(Dataset):
             self.data_list.append(filename)
             self.data_label.append(sample_spk_dict[spk])
         spk_bias += len(sample_spks)
-        print('ROBOVOX Sample Speaker : ',len(sample_spks))
-        print('Total Speaker :',spk_bias)
+        print('ROBOVOX Sample Speakers : ',len(sample_spks))
+        print('ROBOVOX Sample Utterances :',len(sample_train_dict.keys()))
+        print('Total Speakers :',spk_bias)
+        print('Total Utterances :',len(self.data_label))
 
         self.num_label = spk_bias
 
@@ -394,7 +401,6 @@ class train_dataset_sampler(torch.utils.data.Sampler):
         for findex, key in enumerate(dictkeys):
             data    = data_dict[key]
             numSeg  = round_down(min(len(data),self.max_seg_per_spk),self.nPerSpeaker)
-
             
             rp      = lol(numpy.arange(numSeg),self.nPerSpeaker)
             flattened_label.extend([findex] * (len(rp)))
