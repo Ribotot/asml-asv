@@ -9,16 +9,16 @@ import time, pdb, numpy, math
 from utils import accuracy
 
 class LossFunction(nn.Module):
-    def __init__(self, nOut, nClasses, margin=0.2, scale=30, epoch=20, easy_margin=False, **kwargs):
+    def __init__(self, nOut, nClasses, margin=0.2, scale=30, sch_epoch=20, easy_margin=False, **kwargs):
         super(LossFunction, self).__init__()
 
         self.test_normalize = True
         
         init_m = 0.0
-        self.m = init_m
+        self.m = nn.Parameter(torch.tensor(init_m), requires_grad=False)
 
         self.final_m = margin
-        self.epoch_per_m = (self.final_m-self.m)/epoch
+        self.epoch_per_m = (margin-init_m)/sch_epoch
         self.s = scale
         self.nOut = nOut
         self.weight = torch.nn.Parameter(torch.FloatTensor(nClasses, nOut), requires_grad=True)
@@ -29,13 +29,12 @@ class LossFunction(nn.Module):
 
         self.calculate_cos()
 
-        print('Initialised AAMSoftmax margin %.3f scale %.3f'%(self.m,self.s))
+        print('Initialised AAMSoftmax margin %.3f scale %.3f'%(self.m, self.s))
     
     def calculate_cos(self):
         self.cos_m = math.cos(self.m)
         self.sin_m = math.sin(self.m)
 
-        # make the function cos(theta+m) monotonic decreasing while theta in [0°,180°]
         self.th = math.cos(math.pi - self.m)
         self.mm = math.sin(math.pi - self.m) * self.m
 
@@ -44,7 +43,8 @@ class LossFunction(nn.Module):
         self.m += self.epoch_per_m
 
         if self.m > self.final_m:
-            self.m = self.final_m
+            nn.init.constant_(self.m, self.final_m)
+            print('\nRemain margin to %.4f'%(self.m))
         else:
             print('\nUpdate margin to %.4f'%(self.m))
 

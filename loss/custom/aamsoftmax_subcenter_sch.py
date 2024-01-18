@@ -9,21 +9,21 @@ import time, pdb, numpy, math
 from utils import accuracy
 
 class LossFunction(nn.Module):
-    def __init__(self, nOut, nClasses, margin=0.2, scale=30, center=3, topk=5, submargin=0.06, epoch=20, **kwargs):
+    def __init__(self, nOut, nClasses, margin=0.2, scale=30, center=3, topk=5, submargin=0.06, sch_epoch=20, **kwargs):
         super(LossFunction, self).__init__()
 
         self.test_normalize = True
         
         init_m = 0.0
         init_sub_m = 0.0
-        self.m = init_m
-        self.sub_m = -init_sub_m
+        self.m = nn.Parameter(torch.tensor(init_m), requires_grad=False)
+        self.sub_m = nn.Parameter(torch.tensor(-init_sub_m), requires_grad=False)
 
         self.final_m = margin
         self.final_sub_m = -submargin
 
-        self.epoch_per_m = (self.final_m-self.m)/epoch
-        self.epoch_per_sub_m = (self.final_sub_m-self.sub_m)/epoch
+        self.epoch_per_m = (margin-init_m)/sch_epoch
+        self.epoch_per_sub_m = (init_sub_m-submargin)/sch_epoch
 
         self.s = scale
         self.topk = topk
@@ -37,10 +37,10 @@ class LossFunction(nn.Module):
         print('Initialised %d Subcenter AAMSoftmax margin %.3f scale %.3f with %d topk and %.3f submargin '%(center, self.m, self.s, self.topk, -self.sub_m))
     
     def calculate_cos(self):
+        
         self.cos_m = math.cos(self.m)
         self.sin_m = math.sin(self.m)
 
-        # make the function cos(theta+m) monotonic decreasing while theta in [0°,180°]
         self.th = math.cos(math.pi - self.m)
         self.mm = math.sin(math.pi - self.m) * self.m
 
@@ -55,7 +55,7 @@ class LossFunction(nn.Module):
         self.m += self.epoch_per_m
 
         if self.m > self.final_m:
-            self.m = self.final_m
+            nn.init.constant_(self.m, self.final_m)
             print('\nRemain margin to %.4f'%(self.m))
         else:
             print('\nUpdate margin to %.4f'%(self.m))
@@ -63,7 +63,7 @@ class LossFunction(nn.Module):
         self.sub_m += self.epoch_per_sub_m
 
         if self.sub_m < self.final_sub_m:
-            self.sub_m = self.final_sub_m
+            nn.init.constant_(self.sub_m, self.final_sub_m)
             print('Remain submargin to %.4f'%(-self.sub_m))
         else:
             print('Update submargin to %.4f'%(-self.sub_m))

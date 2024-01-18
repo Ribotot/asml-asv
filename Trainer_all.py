@@ -98,7 +98,7 @@ class ModelTrainer(object):
 
         if self.lr_step == "epoch":
             self.__scheduler__.step()
-        self.__model__.module.__L__.step()
+        # self.__model__.module.__L__.step()
 
         return (loss / counter, top1 / counter)
 
@@ -217,7 +217,7 @@ class ModelTrainer(object):
     ## Load parameters
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
-    def loadParameters(self, path):
+    def loadParameters(self, path, load_optimizer=True, load_scheduler=True):
         self_state = self.__model__.module.state_dict()
         checkpoint = torch.load(path, map_location="cpu")
         print("Ckpt file %s loaded!"%(path))
@@ -225,10 +225,12 @@ class ModelTrainer(object):
         if 'network' not in checkpoint.keys():
             loaded_state = checkpoint
         else:
-            self.__optimizer__.load_state_dict(checkpoint['optimizer'])
-            print("Optimizer loaded!")
-            self.__scheduler__.load_state_dict(checkpoint['scheduler'])
-            print("Scheduler loaded!")
+            if load_optimizer:
+                self.__optimizer__.load_state_dict(checkpoint['optimizer'])
+                print("Optimizer loaded!")
+            if load_scheduler:
+                self.__scheduler__.load_state_dict(checkpoint['scheduler'])
+                print("Scheduler loaded!")
             loaded_state = checkpoint['network']
 
         if len(loaded_state.keys()) == 1 and "model" in loaded_state:

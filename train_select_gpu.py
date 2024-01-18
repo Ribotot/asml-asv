@@ -165,7 +165,6 @@ def main_worker(gpu, ngpus_per_node, args):
         dict2scp(args.result_save_path+"/args.scp", vars(args))
 
     ## Initialise trainer and data loader
-
     vox_train_dict = make_voxceleb_train_dict(args.train_list, args.train_path)
     sdsv_train_dict = make_sdsv_train_dict(args.sdsv_train_path, args.sdsv_utt2spk_list)
     cn_train_dict = make_cnceleb_train_dict(args.cnceleb_train_path)
@@ -193,7 +192,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     if args.scheduler == 'onecyclelr':
         epoch_per_sample = []
-        for _ in range(1):
+        for _ in range(10):
             iter(train_sampler)
             epoch_per_sample.append(len(train_sampler))
         args.epoch_per_sample = max(epoch_per_sample)
@@ -203,17 +202,13 @@ def main_worker(gpu, ngpus_per_node, args):
     ## Load model weights
     modelfiles = glob.glob('%s/model0*.model'%args.model_save_path)
     modelfiles.sort()
-
     if(args.initial_model != ""):
-        trainer.loadParameters(args.initial_model)
+        trainer.loadParameters(args.initial_model, load_optimizer=False, load_scheduler=False)
         print("Model {} loaded!".format(args.initial_model))
     elif len(modelfiles) >= 1:
         trainer.loadParameters(modelfiles[-1])
         print("Model {} loaded from previous state!".format(modelfiles[-1]))
         it = int(os.path.splitext(os.path.basename(modelfiles[-1]))[0][5:]) + 1
-
-    for ii in range(1,it):
-        trainer.__scheduler__.step()
 
     ## Save training code and params
     if args.gpu == args.main_gpu_id:
