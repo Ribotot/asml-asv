@@ -98,7 +98,7 @@ class ModelTrainer(object):
 
         if self.lr_step == "epoch":
             self.__scheduler__.step()
-        # self.__model__.module.__L__.step()
+        self.__model__.module.__L__.step()
 
         return (loss / counter, top1 / counter)
 
