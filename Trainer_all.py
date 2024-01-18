@@ -38,7 +38,7 @@ class ModelTrainer(object):
     # ## ===== ===== ===== ===== ===== ===== ===== =====
 
     def train_network(self, loader, verbose):
-
+        
         self.__model__.train()
 
         stepsize = loader.batch_size

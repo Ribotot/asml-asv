@@ -100,7 +100,7 @@ parser.add_argument('--model',          type=str,   default="",     help='Name o
 parser.add_argument('--encoder_type',   type=str,   default="SAP",  help='Type of encoder')
 parser.add_argument('--nOut',           type=int,   default=512,    help='Embedding size in the last FC layer')
 parser.add_argument('--sinc_stride',    type=int,   default=10,     help='Stride size of the first analytic filterbank layer of RawNet3')
-parser.add_argument('--main_gpu_id',    type=str,   default='0',    help='Select main GPU "0"')
+parser.add_argument('--main_gpu_id',    type=int,   default=0,      help='Select main GPU "0"')
 parser.add_argument('--gpus',           type=str,   default="0,1",  help='Select GPUs "0,1"')
 
 

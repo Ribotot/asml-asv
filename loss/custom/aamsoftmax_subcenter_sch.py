@@ -56,6 +56,7 @@ class LossFunction(nn.Module):
 
         if self.m > self.final_m:
             self.m = self.final_m
+            print('\nRemain margin to %.4f'%(self.m))
         else:
             print('\nUpdate margin to %.4f'%(self.m))
 
@@ -63,8 +64,9 @@ class LossFunction(nn.Module):
 
         if self.sub_m < self.final_sub_m:
             self.sub_m = self.final_sub_m
+            print('Remain submargin to %.4f'%(-self.sub_m))
         else:
-            print('\nUpdate submargin to %.4f'%(self.sub_m))
+            print('Update submargin to %.4f'%(-self.sub_m))
 
         self.calculate_cos()
 
