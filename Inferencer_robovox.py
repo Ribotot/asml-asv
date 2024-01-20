@@ -58,12 +58,19 @@ class ModelInferencer(object):
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
     def evaluateFromList(self, test_trial, test_list, test_path, nDataLoaderThread, \
-        distributed, print_interval=100, **kwargs):
+        distributed, non_vad_enr_list, print_interval=100, **kwargs):
 
         if distributed:
             rank = torch.distributed.get_rank()
         else:
             rank = 0
+
+        with open(non_vad_enr_list) as f:
+            lines = f.readlines()
+
+        non_vad_enr_data = []
+        for x in lines:
+            non_vad_enr_data.append('/'.join(x.strip().split('/')[-2:]))
 
         self.__model__.eval()
 
@@ -168,10 +175,11 @@ class ModelInferencer(object):
                 ref_feats = []
                 ref_list = enr2utt_dict[data[1]]
                 for enr_utt in ref_list:
-                    feat = feats_enr[enr_utt].cuda()
-                    if self.__model__.module.__L__.test_normalize:
-                        feat = F.normalize(feat, p=2, dim=1)
-                    ref_feats.append(feat)
+                    if enr_utt not in non_vad_enr_data:
+                        feat = feats_enr[enr_utt].cuda()
+                        if self.__model__.module.__L__.test_normalize:
+                            feat = F.normalize(feat, p=2, dim=1)
+                        ref_feats.append(feat)
                 ref_feat = torch.cat(ref_feats, dim=0)
                 com_feat = feats_te[data[2]].cuda()
                 if self.__model__.module.__L__.test_normalize:                    
@@ -194,12 +202,19 @@ class ModelInferencer(object):
     ## ===== ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
 
     def evaluateFromList_easy_aSn(self, test_trial, test_list, test_path, nDataLoaderThread, \
-        distributed, coh_size=100, print_interval=100, **kwargs):
+        distributed, non_vad_enr_list, coh_size=100, print_interval=100, **kwargs):
 
         if distributed:
             rank = torch.distributed.get_rank()
         else:
             rank = 0
+
+        with open(non_vad_enr_list) as f:
+            lines = f.readlines()
+
+        non_vad_enr_data = []
+        for x in lines:
+            non_vad_enr_data.append('/'.join(x.strip().split('/')[-2:]))
 
         self.__model__.eval()
 
@@ -257,7 +272,11 @@ class ModelInferencer(object):
             inp1 = data[0][0].cuda()
             with torch.no_grad():
                 ref_feat_enr = self.__model__.module.inference(self.crop(inp1,self.enroll_frames,self.crop_option))
-                cosine = F.linear(F.normalize(ref_feat_enr), F.normalize(self.__model__.module.__L__.weight))
+                if len(list(self.__model__.module.__L__.weight.size())) == 3:
+                    cosine_subcen = torch.einsum('... j, ... a b j -> ... a b', F.normalize(ref_feat_enr), F.normalize(self.__model__.module.__L__.weight, dim=-1))
+                    cosine, _ = torch.max(cosine_subcen, dim=1)                    
+                else:
+                    cosine = F.linear(F.normalize(ref_feat_enr), F.normalize(self.__model__.module.__L__.weight))
                 cohort, _ = torch.topk(cosine, coh_size, dim=-1, largest=True, sorted=True)
                 var, mean = torch.var_mean(cohort, dim=-1, keepdims=True)
                 std = torch.sqrt(var)
@@ -267,7 +286,11 @@ class ModelInferencer(object):
             if not self.equal_len:
                 with torch.no_grad():
                     ref_feat_te = self.__model__.module.inference(self.crop(inp1,self.test_frames,self.crop_option))
-                    cosine = F.linear(F.normalize(ref_feat_te), F.normalize(self.__model__.module.__L__.weight))
+                    if len(list(self.__model__.module.__L__.weight.size())) == 3:
+                        cosine_subcen = torch.einsum('... j, ... a b j -> ... a b', F.normalize(ref_feat_te), F.normalize(self.__model__.module.__L__.weight, dim=-1))
+                        cosine, _ = torch.max(cosine_subcen, dim=1)                    
+                    else:
+                        cosine = F.linear(F.normalize(ref_feat_te), F.normalize(self.__model__.module.__L__.weight))
                     cohort, _ = torch.topk(cosine, coh_size, dim=-1, largest=True, sorted=True)
                     var, mean = torch.var_mean(cohort, dim=-1, keepdims=True)
                     std = torch.sqrt(var)                    
@@ -325,12 +348,13 @@ class ModelInferencer(object):
 
                 ref_list = enr2utt_dict[data[1]]
                 for enr_utt in ref_list:
-                    feat = feats_enr[enr_utt].cuda()
-                    means_enrs.append(means_enr[enr_utt].cuda())
-                    stds_enrs.append(stds_enr[enr_utt].cuda())
-                    if self.__model__.module.__L__.test_normalize:
-                        feat = F.normalize(feat, p=2, dim=1)
-                    ref_feats.append(feat)
+                    if enr_utt not in non_vad_enr_data:
+                        feat = feats_enr[enr_utt].cuda()
+                        means_enrs.append(means_enr[enr_utt].cuda())
+                        stds_enrs.append(stds_enr[enr_utt].cuda())
+                        if self.__model__.module.__L__.test_normalize:
+                            feat = F.normalize(feat, p=2, dim=1)
+                        ref_feats.append(feat)
                 ref_feat = torch.cat(ref_feats, dim=0)
                 means_enrs = torch.cat(means_enrs, dim=0)
                 stds_enrs = torch.cat(stds_enrs, dim=0)
@@ -363,12 +387,19 @@ class ModelInferencer(object):
     ## ===== ===== ===== ===== ===== ===== ===== ===== ===== =====
 
     def evaluateFromList_saveSE(self, test_trial, test_list, test_path, nDataLoaderThread, \
-        distributed, result_save_path, epoch, print_interval=100, **kwargs):
+        distributed, non_vad_enr_list, result_save_path, epoch, print_interval=100, **kwargs):
 
         if distributed:
             rank = torch.distributed.get_rank()
         else:
             rank = 0
+
+        with open(non_vad_enr_list) as f:
+            lines = f.readlines()
+
+        non_vad_enr_data = []
+        for x in lines:
+            non_vad_enr_data.append('/'.join(x.strip().split('/')[-2:]))
 
         self.__model__.eval()
  
@@ -531,10 +562,11 @@ class ModelInferencer(object):
                 ref_feats = []
                 ref_list = enr2utt_dict[data[1]]
                 for enr_utt in ref_list:
-                    feat = read_kaldi_binary(utt2arkp_enr[enr_utt])
-                    if self.__model__.module.__L__.test_normalize:
-                        feat = numpy_normalize(feat, p=2, dim=1)
-                    ref_feats.append(feat)
+                    if enr_utt not in non_vad_enr_data:
+                        feat = read_kaldi_binary(utt2arkp_enr[enr_utt])
+                        if self.__model__.module.__L__.test_normalize:
+                            feat = numpy_normalize(feat, p=2, dim=1)
+                        ref_feats.append(feat)
                 ref_feat = numpy.concatenate(ref_feats, axis=0)
                 com_feat = read_kaldi_binary(utt2arkp_te[data[2]])
                 if self.__model__.module.__L__.test_normalize:                    

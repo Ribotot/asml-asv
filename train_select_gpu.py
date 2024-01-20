@@ -172,9 +172,21 @@ def main_worker(gpu, ngpus_per_node, args):
     fre_tedx_train_dict = make_french_tedx_train_dict(args.fre_tedx_path)
     sample_train_dict = make_robovox_sample_train_dict(args.robovox_sample_path)
 
+    if args.gpu == args.main_gpu_id:
+        spk_label_dict = {}
+        spk_list_file = args.result_save_path+"/spk_list.txt"
+        if os.path.isfile(spk_list_file):
+            with open(spk_list_file, "r") as f:
+                lines = f.readlines()
+            for line in lines:
+                line = line.strip().split();
+                spk_label_dict[line[0]] = int(line[1])
+            spk_label_exists = True
+        else:
+            spk_label_exists = False
 
     train_dataset = train_dataset_loader(vox_train_dict, sdsv_train_dict, cn_train_dict, fre_mls_train_dict, \
-                                        fre_tedx_train_dict, sample_train_dict, **vars(args))
+                                        fre_tedx_train_dict, sample_train_dict, spk_list_file, spk_label_dict, spk_label_exists, **vars(args))
     print('#Class :',train_dataset.num_label)
     assert train_dataset.num_label == args.nClasses
 

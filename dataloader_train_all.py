@@ -234,7 +234,7 @@ def make_robovox_sample_train_dict(robovox_sample_path):
 
 class train_dataset_loader(Dataset):
     def __init__(self, voxceleb_train_dict, sdsv_train_dict, cnceleb_train_dict, french_mls_train_dict, french_tedx_train_dict, sample_train_dict, \
-        augment_noise, musan_path, robovox_noise_path, rir_path, max_frames, train_path, **kwargs):
+        spk_list_file, spk_label_dict, spk_label_exists, augment_noise, musan_path, robovox_noise_path, rir_path, max_frames, train_path, **kwargs):
 
         self.augment_wav = AugmentWAV(musan_path=musan_path, sample_noise_path=robovox_noise_path, rir_path=rir_path, max_frames = max_frames)
 
@@ -246,83 +246,101 @@ class train_dataset_loader(Dataset):
         
         self.data_list  = []
         self.data_label = []
+
         spk_bias = 0
+        data_bias = 0
+        if spk_label_exists:
+            print('Load spk-label file')
 
         voxceleb_spks = list(set(voxceleb_train_dict.values()))
         voxceleb_spks.sort()
-        voxceleb_spk_dict = {}
-        for lidx, spk_lab in enumerate(voxceleb_spks):
-            voxceleb_spk_dict[spk_lab] = lidx
+        if not spk_label_exists:
+            for lidx, spk_lab in enumerate(voxceleb_spks):
+                spk_label_dict[str(data_bias)+'_'+spk_lab] = lidx
         for filename, spk in voxceleb_train_dict.items():
             self.data_list.append(filename)
-            self.data_label.append(voxceleb_spk_dict[spk])
+            self.data_label.append(spk_label_dict[str(data_bias)+'_'+spk])
         spk_bias += len(voxceleb_spks)
+        data_bias += 1
         print('VoxCeleb2 Speakers : ',len(voxceleb_spks))
         print('VoxCeleb2 Utterances :', len(voxceleb_train_dict.keys()))
 
         sdsv_spks = list(set(sdsv_train_dict.values()))
         sdsv_spks.sort()
-        sdsv_spk_dict = {}
-        for lidx, spk_lab in enumerate(sdsv_spks):
-            sdsv_spk_dict[spk_lab] = lidx + spk_bias
+        if not spk_label_exists:
+            for lidx, spk_lab in enumerate(sdsv_spks):
+                spk_label_dict[str(data_bias)+'_'+spk_lab] = lidx + spk_bias
         for filename, spk in sdsv_train_dict.items():
             self.data_list.append(filename)
-            self.data_label.append(sdsv_spk_dict[spk])     
+            self.data_label.append(spk_label_dict[str(data_bias)+'_'+spk])     
         spk_bias += len(sdsv_spks)
+        data_bias += 1
         print('SDSV2020 task2 Speakers : ',len(sdsv_spks))
         print('SDSV2020 task2 Utterances :',len(sdsv_train_dict.keys()))
 
         cnceleb_spks = list(set(cnceleb_train_dict.values()))
         cnceleb_spks.sort()
-        cnceleb_spk_dict = {}
-        for lidx, spk_lab in enumerate(cnceleb_spks):
-            cnceleb_spk_dict[spk_lab] = lidx + spk_bias
+        if not spk_label_exists:
+            for lidx, spk_lab in enumerate(cnceleb_spks):
+                spk_label_dict[str(data_bias)+'_'+spk_lab] = lidx + spk_bias
         for filename, spk in cnceleb_train_dict.items():
             self.data_list.append(filename)
-            self.data_label.append(cnceleb_spk_dict[spk])
+            self.data_label.append(spk_label_dict[str(data_bias)+'_'+spk])
         spk_bias += len(cnceleb_spks)
+        data_bias += 1
         print('CN-Celeb1 Speakers : ',len(cnceleb_spks))
         print('CN-Celeb1 Utterances :',len(cnceleb_train_dict.keys()))
 
         french_mls_spks = list(set(french_mls_train_dict.values()))
         french_mls_spks.sort()
-        french_mls_spk_dict = {}
-        for lidx, spk_lab in enumerate(french_mls_spks):
-            french_mls_spk_dict[spk_lab] = lidx + spk_bias
+        if not spk_label_exists:
+            for lidx, spk_lab in enumerate(french_mls_spks):
+                spk_label_dict[str(data_bias)+'_'+spk_lab] = lidx + spk_bias
         for filename, spk in french_mls_train_dict.items():
             self.data_list.append(filename)
-            self.data_label.append(french_mls_spk_dict[spk])
+            self.data_label.append(spk_label_dict[str(data_bias)+'_'+spk])
         spk_bias += len(french_mls_spks)
+        data_bias += 1
         print('Multilingual LibriSpeech (French) Speakers : ',len(french_mls_spks))
         print('Multilingual LibriSpeech (French) Utterances :',len(french_mls_train_dict.keys()))
 
         french_tedx_spks = list(set(french_tedx_train_dict.values()))
         french_tedx_spks.sort()
-        french_tedx_spk_dict = {}
-        for lidx, spk_lab in enumerate(french_tedx_spks):
-            french_tedx_spk_dict[spk_lab] = lidx + spk_bias
+        if not spk_label_exists:
+            for lidx, spk_lab in enumerate(french_tedx_spks):
+                spk_label_dict[str(data_bias)+'_'+spk_lab] = lidx + spk_bias
         for filename, spk in french_tedx_train_dict.items():
             self.data_list.append(filename)
-            self.data_label.append(french_tedx_spk_dict[spk])
+            self.data_label.append(spk_label_dict[str(data_bias)+'_'+spk])
         spk_bias += len(french_tedx_spks)
+        data_bias += 1
         print('Multilingual TEDx (French) Speakers : ',len(french_tedx_spks))
         print('Multilingual TEDx (French) Utterances :',len(french_tedx_train_dict.keys()))
 
         sample_spks = list(set(sample_train_dict.values()))
         sample_spks.sort()
-        sample_spk_dict = {}
-        for lidx, spk_lab in enumerate(sample_spks):
-            sample_spk_dict[spk_lab] = lidx + spk_bias
+        if not spk_label_exists:
+            for lidx, spk_lab in enumerate(sample_spks):
+                spk_label_dict[str(data_bias)+'_'+spk_lab] = lidx + spk_bias
         for filename, spk in sample_train_dict.items():
             self.data_list.append(filename)
-            self.data_label.append(sample_spk_dict[spk])
+            self.data_label.append(spk_label_dict[str(data_bias)+'_'+spk])
         spk_bias += len(sample_spks)
+        data_bias += 1
         print('ROBOVOX Sample Speakers : ',len(sample_spks))
         print('ROBOVOX Sample Utterances :',len(sample_train_dict.keys()))
+
+        print('Total Datasets :',data_bias)
         print('Total Speakers :',spk_bias)
         print('Total Utterances :',len(self.data_label))
 
         self.num_label = spk_bias
+
+        if not spk_label_exists:
+            spk_label_file = open(spk_list_file, "w+")
+            for spk in spk_label_dict.keys():
+                spk_label_file.write(spk+' {:d}\n'.format(spk_label_dict[spk]))
+            print('Save spk-label file')
 
     def __getitem__(self, indices):
 

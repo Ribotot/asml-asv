@@ -14,8 +14,8 @@ class LossFunction(nn.Module):
 
         self.test_normalize = True
         
-        init_m = 0.0
-        init_sub_m = 0.0
+        init_m = 0.2
+        init_sub_m = 0.06
         self.m = nn.Parameter(torch.tensor(init_m), requires_grad=False)
         self.sub_m = nn.Parameter(torch.tensor(-init_sub_m), requires_grad=False)
 

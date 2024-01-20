@@ -74,16 +74,18 @@ parser.add_argument('--channel',        type=int,   default=4,   choices=[0,1,2,
 # parser.add_argument('--dev_path',       type=str,   default="data/robovox_sp_cup_2024/trian",   help='Absolute path to the Robovox multichannel set')
 # parser.add_argument('--eval_path',      type=str,   default="data/robovox_sp_cup_2024/test",    help='Absolute path to the Robovox singlechannel set')
     ########## real example (Choi Jeong-Hwan) ########### 
-# parser.add_argument('--dev_list',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/multi-channel/multi-channel-trials.trl",     help='VOiCES2019 dev trial list')
-# parser.add_argument('--eval_list',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/single-channel/signle-channel-trials.trl",     help='VOiCES2019 eval trial list')
-# parser.add_argument('--dev_path',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/multi-channel/",   help='Absolute path to the VOiCES2019 dev set')
-# parser.add_argument('--eval_path',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/single-channel/", help='Absolute path to the VOiCES2019 eval set')
+parser.add_argument('--dev_list',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/multi-channel/multi-channel-trials.trl",     help='VOiCES2019 dev trial list')
+parser.add_argument('--eval_list',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/single-channel/signle-channel-trials.trl",     help='VOiCES2019 eval trial list')
+parser.add_argument('--dev_path',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/multi-channel/",   help='Absolute path to the VOiCES2019 dev set')
+parser.add_argument('--eval_path',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/data/single-channel/", help='Absolute path to the VOiCES2019 eval set')
 
-parser.add_argument('--dev_list',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/multi-channel/multi-channel-trials.trl",     help='VOiCES2019 dev trial list')
-parser.add_argument('--eval_list',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/single-channel/signle-channel-trials.trl",     help='VOiCES2019 eval trial list')
-parser.add_argument('--dev_path',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/multi-channel/",   help='Absolute path to the VOiCES2019 dev set')
-parser.add_argument('--eval_path',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/single-channel/", help='Absolute path to the VOiCES2019 eval set')
+# parser.add_argument('--dev_list',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/multi-channel/multi-channel-trials.trl",     help='VOiCES2019 dev trial list')
+# parser.add_argument('--eval_list',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/single-channel/signle-channel-trials.trl",     help='VOiCES2019 eval trial list')
+# parser.add_argument('--dev_path',       type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/multi-channel/",   help='Absolute path to the VOiCES2019 dev set')
+# parser.add_argument('--eval_path',      type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/single-channel/", help='Absolute path to the VOiCES2019 eval set')
 
+parser.add_argument('--multi_non_vad_list',    type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/non_vad_enr_multi.scp",     help='VOiCES2019 non vad dev data list')
+parser.add_argument('--single_non_vad_list',   type=str,   default="/media/jh2/f22b587f-8065-4c02-9b74-f6b9f5a89581/DB/ROBOVOX_SP_CUP_2024/crop_data/non_vad_enr_single.scp",     help='VOiCES2019 non vad eval data list')
 
 ## Model definition
 parser.add_argument('--n_mels',         type=int,   default=40,     help='Number of mel filterbanks')
@@ -141,10 +143,12 @@ def main_worker(gpu, ngpus_per_node, args):
     if args.test_trial == "multi":
         args.test_list   = args.dev_list
         args.test_path   = args.dev_path
+        args.non_vad_enr_list = args.multi_non_vad_list
         trial_type = '/robovox2024_multi'
     elif args.test_trial == "single":
         args.test_list   = args.eval_list
         args.test_path   = args.eval_path
+        args.non_vad_enr_list = args.single_non_vad_list
         trial_type = '/robovox2024_single'
     else:
         raise ValueError('Undefined test trial type')    
@@ -212,32 +216,37 @@ def main_worker(gpu, ngpus_per_node, args):
     if args.submitted:
         print('Gernerated the submission file\n')
         submision_file = open(final_save_path+"/submission.txt", "w+")
-        if args.eval_type == "easy_sn":
-            sc = min_max_norm(sc)
+        # mapping to [zero, one]
+        sc = min_max_norm(sc)
+        # mapping to cosine distance
+        sc = cosine_distance(sc)
 
     for score, target, line in zip(sc, lab, tri):
         tri_resultfile.write(line+' {:3.3f}'.format(score) +' {:3.3f}\n'.format(target))
         only_scorefile.write('{:3.3f}\n'.format(score))
         if args.submitted:
             data = line.strip().split()
-            submision_file.write(data[0]+'\t'+data[1]+'\t{:3.7f}\n'.format(1.0 - score))
+            submision_file.write(data[0]+'\t'+data[1]+'\t{:3.7f}\n'.format(score))
     tri_resultfile.close()
     only_scorefile.close()
+    if args.submitted:
+        submision_file.close()
 
 def min_max_norm(input_):
-    min_value = min(input_)
-    max_value = max(input_)
+    min_value = numpy.min(input_)
+    max_value = numpy.max(input_)
     scale = max_value - min_value
     output = (input_- min_value) / (scale)
     output = output * 0.9999998 + 0.0000001
-    # print(output[0:10])
-    # output = []
-    # for line in input_:
-    #     output.append((line - min_value) / scale)
-    # print(output[0:10])
-    # exit()
-
     return output
+
+def cosine_distance(input_):
+    # mapping to [-one, one] (cosine similarty)
+    output = (input_ - 0.5000000) / 0.5000000
+    # mapping to cosine distance
+    output = 1.0000000 - output
+    return output
+
 
 
 ## ===== ===== ===== ===== ===== ===== ===== =====

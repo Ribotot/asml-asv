@@ -177,14 +177,13 @@ class test_dataset_loader_multichannel_dict(Dataset):
         return len(self.test_list)
 
 class test_dataset_loader_multichannel_robovox(Dataset):
-    def __init__(self, test_dict, **kwargs):
+    def __init__(self, test_dict, channel, **kwargs):
         self.test_dict  = test_dict
         files           = self.test_dict.keys()
         self.test_list  = list(set(files))
         self.test_list.sort()
         self.enr_channel = 4
-        # self.te_channel = 4
-        self.te_channel = 3
+        self.te_channel = channel
 
     def __getitem__(self, index):
         path = self.test_dict[self.test_list[index]]
