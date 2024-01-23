@@ -28,13 +28,15 @@ class LossFunction(nn.Module):
         self.s = scale
         self.topk = topk
         self.nOut = nOut
-        self.weight = torch.nn.Parameter(torch.FloatTensor(center, nClasses, nOut), requires_grad=True)
+        self.center = center
+        self.nClasses = nClasses
+        self.weight = torch.nn.Parameter(torch.FloatTensor(self.center * self.nClasses, nOut), requires_grad=True)
         self.ce = nn.CrossEntropyLoss()
         nn.init.xavier_normal_(self.weight, gain=1)
 
         self.calculate_cos()
 
-        print('Initialised %d Subcenter AAMSoftmax margin %.3f scale %.3f with %d topk and %.3f submargin '%(center, self.m, self.s, self.topk, -self.sub_m))
+        print('Initialised %d Subcenter AAMSoftmax margin %.3f scale %.3f with %d topk and %.3f submargin '%(self.center, self.m, self.s, self.topk, -self.sub_m))
     
     def calculate_cos(self):
         
@@ -77,8 +79,9 @@ class LossFunction(nn.Module):
         assert x.size()[1] == self.nOut
 
         # cos(theta)
-        cosine_subcen = torch.einsum('... j, ... a b j -> ... a b', F.normalize(x), F.normalize(self.weight, dim=-1))
-        cosine, _ = torch.max(cosine_subcen, dim=1)
+        cosine = F.linear(F.normalize(x), F.normalize(self.weight))
+        cosine = torch.reshape(cosine, (-1, self.nClasses, self.center))
+        cosine, _ = torch.max(cosine, dim=2)
 
         # cos(theta + m)
         sine = torch.sqrt((1.0 - torch.mul(cosine, cosine)).clamp(0, 1))
