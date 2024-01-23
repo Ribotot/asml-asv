@@ -14,8 +14,8 @@ class LossFunction(nn.Module):
 
         self.test_normalize = True
         
-        init_m = 0.2
-        init_sub_m = 0.06
+        init_m = 0.0
+        init_sub_m = 0.0
         self.m = nn.Parameter(torch.tensor(init_m), requires_grad=False)
         self.sub_m = nn.Parameter(torch.tensor(-init_sub_m), requires_grad=False)
 
@@ -86,29 +86,14 @@ class LossFunction(nn.Module):
         phi = torch.where((cosine - self.th) > 0, phi, cosine - self.mm)
 
         sub_phi = cosine * self.sub_cos_m - sine * self.sub_sin_m
-        sub_phi = torch.where((cosine - self.sub_th) > 0, sub_phi, cosine - self.sub_mm)
-
-        one_hot_sub = torch.zeros_like(cosine)
-        _, indecies = torch.topk(cosine, self.topk+1)
-
-        fix_indecies = []
-        for i, lab in enumerate(label):
-            index = indecies[i,:]
-            if lab in index:
-                index = index[index != lab]
-                fix_indecies.append(index.unsqueeze(dim=0))
-            else:
-                index = index[:-1]
-                fix_indecies.append(index.unsqueeze(dim=0))
-        indecies = torch.cat(fix_indecies, dim=0)
-
-        for k in range(self.topk):
-            one_hot = torch.zeros_like(cosine)
-            one_hot.scatter_(1, indecies[:,k].view(-1, 1), 1)
-            one_hot_sub += one_hot
+        # sub_phi = torch.where((cosine - self.sub_th) > 0, sub_phi, cosine - self.sub_mm)
 
         one_hot = torch.zeros_like(cosine)
         one_hot.scatter_(1, label.view(-1, 1), 1)
+
+        _, indecies = torch.topk(cosine -2 * one_hot, self.topk)
+        one_hot_sub = torch.zeros_like(cosine)
+        one_hot_sub.scatter_(1, indecies.view(-1, 1), 1)
 
         output = (one_hot * phi) + (one_hot_sub * sub_phi) +((1.0 - one_hot_sub - one_hot) * cosine)
         output = output * self.s
