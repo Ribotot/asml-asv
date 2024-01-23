@@ -65,7 +65,7 @@ class AugmentWAV(object):
 
         self.noisesnr   = {'noise':[-3,13], 'speech':[13,20]}
         self.numnoise   = {'noise':[1,1], 'speech':[1,3]}
-        self.clip_prob  = [5, 10]
+        self.clip_prob  = [3, 8]
         self.noiselist  = {}
 
         augment_files   = glob.glob(os.path.join(musan_path,'*/*/*/*.wav'));
@@ -159,7 +159,8 @@ class AugmentWAV(object):
 
         # audio_topk = int(random.uniform(self.clip_prob[0],self.clip_prob[1])/100 * self.max_audio)
         # topk_value  = numpy.min(numpy.partition(numpy.abs(audio), -audio_topk)[:,-audio_topk:])
-        topk_value = (1 - random.uniform(self.clip_prob[0],self.clip_prob[1])/100)*numpy.max(numpy.abs(audio))
+        topk_value = numpy.max(numpy.abs(audio))
+        topk_value = numpy.sqrt((1 - random.uniform(self.clip_prob[0],self.clip_prob[1])/100)*topk_value*2)
 
         return numpy.clip(audio, -topk_value, topk_value)
 
