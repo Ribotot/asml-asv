@@ -1,6 +1,6 @@
 #! /usr/bin/python
 # -*- encoding: utf-8 -*-
-# Adapted from https://github.com/wujiyang/Face_Pytorch (Apache License)
+# Adapted from https://github.com/wenet-e2e/wespeaker
 
 import torch
 import torch.nn as nn
@@ -93,7 +93,7 @@ class LossFunction(nn.Module):
 
         _, indecies = torch.topk(cosine -2 * one_hot, self.topk)
         one_hot_sub = torch.zeros_like(cosine)
-        one_hot_sub.scatter_(1, indecies.view(-1, 1), 1)
+        one_hot_sub.scatter_(1, indecies, 1)
 
         output = (one_hot * phi) + (one_hot_sub * sub_phi) +((1.0 - one_hot_sub - one_hot) * cosine)
         output = output * self.s
