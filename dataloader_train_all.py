@@ -63,8 +63,8 @@ class AugmentWAV(object):
 
         self.noisetypes = ['noise']
 
-        self.noisesnr   = {'noise':[-3,15], 'speech':[10,20]}
-        self.numnoise   = {'noise':[1,1], 'speech':[1,1]}
+        self.noisesnr   = {'noise':[-3,13], 'speech':[13,20]}
+        self.numnoise   = {'noise':[1,1], 'speech':[1,3]}
         self.clip_prob  = [5, 10]
         self.noiselist  = {}
 
@@ -110,7 +110,7 @@ class AugmentWAV(object):
         clean_db = 10 * numpy.log10(numpy.mean(audio ** 2)+1e-4) 
 
         numnoise    = [1, 3]
-        noisesnr    = [15, 25]
+        noisesnr    = [13, 20]
         noiselist   = random.sample(self.noiselist[noisecat], random.randint(numnoise[0],numnoise[1]))
 
         noises = []
@@ -137,7 +137,7 @@ class AugmentWAV(object):
 
         for noise in noiselist:
 
-            noiseaudio  = loadWAV(noise, self.max_frames)
+            noiseaudio  = loadWAV(noise, self.max_frames+self.aug_frame)
             noise_snr   = random.uniform(self.noisesnr[noisecat][0],self.noisesnr[noisecat][1])
             noise_db = 10 * numpy.log10(numpy.mean(noiseaudio[0] ** 2)+1e-4) 
             noises.append(numpy.sqrt(10 ** ((clean_db - noise_db - noise_snr) / 10)) * noiseaudio)
@@ -353,51 +353,39 @@ class train_dataset_loader(Dataset):
             if self.augment_noise:
                 augtype = random.random()
                 start = random.randint(1, 9599) #self.aug_len
-                if augtype > 0.8:
+                if augtype > 0.72:
                     audio   = self.augment_wav.reverberate(audio)
                     audio   = self.augment_wav.additive_large_noise('noise',audio,start)
-                elif augtype > 0.79:
+                elif augtype > 0.7:
                     audio   = self.augment_wav.reverberate(audio)
-                    audio   = self.augment_wav.additive_large_noise('speech',audio,start)
-                elif augtype > 0.54:
-                    audio   = self.augment_wav.reverberate(audio)
-                    audio   = self.augment_wav.additive_small_noise('noise',audio,start)
+                    audio   = self.augment_wav.additive_large_noise('noise',audio,start)
+                    audio   = self.augment_wav.additive_noise('speech',audio)                    
                 elif augtype > 0.52:
                     audio   = self.augment_wav.reverberate(audio)
-                    audio   = self.augment_wav.additive_small_noise('speech',audio,start)
+                    audio   = self.augment_wav.additive_small_noise('noise',audio,start)
                 elif augtype > 0.50:
                     audio   = self.augment_wav.reverberate(audio)
                     audio   = self.augment_wav.additive_small_noise('noise',audio,start)
-                    audio   = self.augment_wav.additive_noise('speech',audio,start)
+                    audio   = self.augment_wav.additive_noise('speech',audio)
 
-                elif augtype > 0.45:
+                elif augtype > 0.4:
                     audio   = self.augment_wav.audio_clip(audio)
                     audio   = self.augment_wav.additive_large_noise('noise',audio,start)
-                elif augtype > 0.44:
-                    audio   = self.augment_wav.audio_clip(audio)
-                    audio   = self.augment_wav.additive_large_noise('speech',audio,start)
-                elif augtype > 0.29:
+                elif augtype > 0.28:
                     audio   = self.augment_wav.audio_clip(audio)
                     audio   = self.augment_wav.additive_small_noise('noise',audio,start)
-                elif augtype > 0.27:
-                    audio   = self.augment_wav.audio_clip(audio)
-                    audio   = self.augment_wav.additive_small_noise('speech',audio,start)
                 elif augtype > 0.25:
                     audio   = self.augment_wav.audio_clip(audio)
                     audio   = self.augment_wav.additive_small_noise('noise',audio,start)
-                    audio   = self.augment_wav.additive_noise('speech',audio,start)
+                    audio   = self.augment_wav.additive_noise('speech',audio)
 
-                elif augtype > 0.20:
+                elif augtype > 0.15:
                     audio   = self.augment_wav.additive_large_noise('noise',audio,start)
-                elif augtype > 0.19:
-                    audio   = self.augment_wav.additive_large_noise('speech',audio,start)
-                elif augtype > 0.04:
+                elif augtype > 0.03:
                     audio   = self.augment_wav.additive_small_noise('noise',audio,start)
-                elif augtype > 0.02:
-                    audio   = self.augment_wav.additive_small_noise('speech',audio,start)
-                else
+                else:
                     audio   = self.augment_wav.additive_small_noise('noise',audio,start)
-                    audio   = self.augment_wav.additive_noise('speech',audio,start)
+                    audio   = self.augment_wav.additive_noise('speech',audio)
                          
 
             feat.append(audio);
